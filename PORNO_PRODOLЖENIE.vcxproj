@@ -25,7 +25,6 @@
     <ClInclude Include="RBtree.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ASDKNFAKSKDNFDF.cpp" />
     <ClCompile Include="Source1.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

@@ -34,7 +34,7 @@ struct my_pair {
 	}
 };
 
-//https://russianblogs.com/article/1327503951/
+
 
 template<typename _Key, typename _Value, bool CanChangeValue = true>
 class  RBTree
@@ -69,7 +69,7 @@ private:
 
 	};
 
-	Node* root;
+	Node* root;//туда всавляется самый первый элемент
 	size_t _size;
 
 private://функции закрытые от людей, вспомогательные для интерфейсных
@@ -111,6 +111,7 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 	};
 
 	void insert(Node*& root, Node* node) {	// Вставляем узел, внутренний интерфейс
+		//тут тупо, просто доходим до нужного элемента и вставляем, покрасив в красный
 		Node* x = root;
 		Node* y = NULL;
 		while (x != NULL)
@@ -135,33 +136,34 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 		InsertFixUp(root, node);
 	};
 	void InsertFixUp(Node*& root, Node* node){
-		Node* parent;
-		parent = node->parent;
-		while (node != RBTree::root && parent->color == RED)
+		//Владимир Владимирович, не бейте пж, но я лекции МФТИ смотрел...
+		//https://www.youtube.com/watch?v=RnQYXltlkrI
+		Node* parent = node->parent;
+		while (node != RBTree::root && parent->color == RED)//(рекурсивно доходим до корня при условиях везде красный) условие, что отец красный 
 		{
 			Node* gparent = parent->parent;
 			if (gparent->left == parent)
 			{
 				Node* uncle = gparent->right;
-				if (uncle != NULL && uncle->color == RED)
+				if (uncle != NULL && uncle->color == RED)//условие при красном дяде (в тетке под пунктом 3а)
 				{
 					parent->color = BLACK;
 					uncle->color = BLACK;
 					gparent->color = RED;
-					node = gparent;
-					parent = node->parent;
+					node = gparent;//идем рекурсивно к деду, как и писал выше
+					parent = node->parent;//тут еще нужно будет проверить вышестоящих
 				}
-				else
+				else//дядя черный, отец красный
 				{
-					if (parent->right == node)
+					if (parent->right == node)//в тетке рисунок справа
 					{
-						leftRotate(root, parent);
+						leftRotate(root, parent);//Хитро да), в тетке рисунок слева
 						swap(node, parent);
 					}
-					rightRotate(root, gparent);
+					rightRotate(root, gparent);//в тетке рисунок спрва
 					gparent->color = RED;
 					parent->color = BLACK;
-					break;
+					break;//а тут уже не нужно будет рекурсивно, так как черным стал, а черным хоть сколько подряд)
 				}
 			}
 			else
@@ -185,8 +187,8 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 					}
 					leftRotate(root, gparent);
 					parent->color = BLACK;
-					gparent->color = RED;
-					break;
+					gparent->color = RED;//так как сделали поворот(+swap), то самый верхний черный уже
+					break;//а тут уже не нужно будет рекурсивно, так как черным стал, а черным хоть сколько подряд)
 				}
 			}
 		}
@@ -201,14 +203,14 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 		delete node;
 		node = nullptr;
 	}
-	void remove(Node*& root, Node* node){		// Удалить узел как KEY
+	void remove(Node*& root, Node* node){
 		Node* child, * parent;
 		_Color color;
-		// Левый и правый узлы удаленного узла не пусты (не конечные узлы)
+		// Есть 2 ребенка
 		if (node->left != NULL && node->right != NULL)
 		{
 			Node* replace = node;
-			// Найти узел-преемник (самый нижний левый узел правого поддерева текущего узла)
+			// Найти самый нижний левый узел правого поддерева текущего узла
 			replace = node->right;
 			while (replace->left != NULL)
 			{
@@ -216,7 +218,7 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 			}
 			// Случай, когда удаленный узел не является корневым узлом
 			if (node->parent != NULL)
-			{
+			{//тупо смотрим куда вставлять для отца ссылку
 				if (node->parent->left == node)
 					node->parent->left = replace;
 				else
@@ -225,18 +227,30 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 			// Ситуация с корневым узлом
 			else
 				root = replace;
-			// child - это правильный узел, который заменяет узел и является узлом, который требует последующей корректировки
-			// Поскольку замена является преемником, он не может иметь левого дочернего узла
-			// Аналогично, у узла-предшественника не может быть правого дочернего узла
+			// child - это правильный узел, который заменяет наш и является узлом, который требует последующей корректировки
+			//ТАК КАК МЫ ЗАМЕНИЛИ НА САМЫЙ ЛЕВЫЙ СПРАВА NODE, ТО У НЕГО (REPLACE) МОЖЕТ БЫТЬ ТОЛЬКО ПРАВЫЙ СЫНОК
+			/*
+				   node
+					/ \
+				  ...   *
+					   /\
+					...	 ...		
+					/   \
+				replace  ...
+				  /  \
+			   None  child
+			*/
+			
+			
 			child = replace->right;
 			parent = replace->parent;
 			color = replace->color;
 
-			// Удаленный узел является родительским узлом замещающего узла (repalce)
+			// Удаленный узел является родительским узлом замещающего узла (replace)
 			if (parent == node)
 				parent = replace;
 			else
-			{
+			{	//я сука на следующий день встал и забыл как ночью дописал, легче рисовать))))
 				// Существование дочернего узла
 				if (child != NULL)
 					child->parent = parent;
@@ -249,24 +263,24 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 			replace->color = node->color;
 			replace->left = node->left;
 			node->left->parent = replace;
-			if (color == BLACK)
-				removeFixUp(root, child, parent);
+			if (color == BLACK)//не забываем, что на красного всем пох, удалили и х*й с ним)))
+				removeFixUp(root, child, parent);//мы передаем ребенка и отца
 
 			delete node;
 			return;
 		}
-		// Когда в удаленном узле только левый (правый) узел пуст, найдите дочерний узел удаленного узла
+		// Когда 1 ребенок, найдите дочерний узел удаленного узла
 		if (node->left != NULL)
 			child = node->left;
 		else
 			child = node->right;
 
+		//в целом если сирот не будет, то тоже норм
 		parent = node->parent;
 		color = node->color;
-		if (child)
-		{
-			child->parent = parent;
-		}
+
+		if (child) child->parent = parent;
+
 		// Удаленный узел не является корневым узлом
 		if (parent)
 		{
@@ -277,28 +291,28 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 		}
 		// Удаленный узел является корневым узлом
 		else
-			RBTree::root = child;
+			RBTree::root = child;// а это было гениально называть локальную переменную так же как глобальную хуярь с этим теперь)))
 
 		if (color == BLACK)
 		{
-			removeFixUp(root, child, parent);
+			removeFixUp(root, child, parent);//мы передаем ребенка и отца у удаленного элемента прошу заметить
 		}
 		delete node;
 
 	}
 	void removeFixUp(Node*& root, Node* node, Node* parent){
-		Node* othernode;
+		Node* othernode;//брат короче
 		while ((!node) || node->color == BLACK && node != RBTree::root)
 		{
 			if (parent->left == node)
 			{
 				othernode = parent->right;
-				if (othernode->color == RED)
+				if (othernode->color == RED)//случай а) в тетке
 				{
 					othernode->color = BLACK;
 					parent->color = RED;
 					leftRotate(root, parent);
-					othernode = parent->right;
+					othernode = parent->right;//чтобы перейти в случай б) в тетке
 				}
 				else
 				{
@@ -357,7 +371,7 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 
 	Node* search(Node* node, _Key key) const{
 		if (node == NULL || node->data.first == key)
-			return node;
+			return node;//он либо вернет нуль-листье, либо найденный
 		else
 			if (key > node->data.first)
 				return search(node->right, key);
@@ -459,7 +473,7 @@ public://функции открытые для людей - интерфейс
 		return search(root, key);
 	}
 
-	//для печати
+	//для печати(КЛП)
 	void print() {		// напечатать дерево
 		if (root == NULL)
 			cout << "empty RBtree";
@@ -468,19 +482,19 @@ public://функции открытые для людей - интерфейс
 	}
 
 	//они нужны для обхода
-	void preOrder(){			// Предзаказ обхода печати красного черного дерева
+	void preOrder(){			// Корень-Левый-Правый обход
 		if (root == NULL)
 			cout << "empty RBtree";
 		else
 			preOrder(root);
 	};
-	void inOrder(){   // Обход последовательности
+	void inOrder(){   // Левый-Корень-Правый обход
 		if (root == NULL)
 			cout << "empty RBtree";
 		else
 			inOrder(root);
 	};
-	void postOrder(){   // пост-заказ обхода	
+	void postOrder(){   // Левый-Правый-Корень обход
 		if (root == NULL)
 			cout << "empty RBtree";
 		else

@@ -10,6 +10,24 @@ using namespace std;
 
 void a() {
 	vector<int> nums{ 10,40,30,60,90,-1, 70,20,50,80,100 };
+	/*
+				  60	
+				 / \
+				/	\
+			   /	 \
+			  /		  \
+			 /		   \
+			/			\
+		  30			 80
+		 /	\			/	\
+	  10	  40	 70       90
+	  /\	  /\	 /\		  /\
+	-1	20	-	50	-	-	-	100
+	
+	*/
+
+
+
 	RBTree<int, int> tree;
 	for (auto num : nums)
 		tree.insert(num, 1);
