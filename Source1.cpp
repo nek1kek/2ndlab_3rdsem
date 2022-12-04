@@ -37,13 +37,13 @@ void a() {
 	cout << endl;
 	tree.postOrder();
 	cout << endl;
-	cout << "Найти узел с ключом 30: \n";
+	cout << "Найти узел с ключом 30:";
 	cout << endl << tree.search(30)->data.first << endl;
 	cout << "Удалить узел с ключом 100 \n";
 	tree.remove(100);
 	tree.preOrder();
 	cout << endl;
-	cout << "\ nКрасные и черные детали дерева: \n";
+	cout << "\nКрасные и черные детали дерева: \n";
 	tree.print();
 	cin.get();
 }
@@ -61,6 +61,13 @@ void b() {
 
 int main()
 {
-	a();
+	setlocale(LC_ALL, "Russian");
+	//a();
+	LinkedList<int> z;
+	z.Append(11);
+	cout << z[100];
+	DynamicArray<LinkedList<int>> a(1, LinkedList<int>(1,1));
+	a[1].Append(13);
+	cout << a[0][0];
 }
 

@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "exception.h"
+
 
 template<typename T, bool IsConst>
 class BidirectionalIterator;
@@ -8,7 +9,7 @@ template<typename T>
 class LinkedList;
 
 template<typename T>
-size_t distance(typename LinkedList<T>::iterator begin, typename LinkedList<T>::iterator end) {
+size_t distance(typename LinkedList<T>::iterator begin, typename LinkedList<T>::iterator end) {//возвращает расстояние между объектами
 	size_t res = 0;
 	while (begin != end) {
 		begin++;
@@ -26,15 +27,21 @@ template <class T>
 class LinkedList
 {
 	template<typename V, bool X>
-	friend class BidirectionalIterator;
+	friend class BidirectionalIterator;//и означает, что к его приватным переменным может образаться bidirectional
 public:
 	int size = 0;
 	struct Item {
 		Item* next = nullptr;
 		Item* prev = nullptr;
-		T data;
-		Item(const T& newdata) : data(newdata) {}
-		Item() = default;
+		T data = T();
+		Item(T data) {
+			this->data = data;
+		}
+		Item() {
+			this->data = T();
+		}
+		~Item() {
+		}
 	};
 	struct List {
 		Item* head = nullptr;
@@ -60,21 +67,18 @@ public:
 	}
 
 	void clear() {
-		if (items == nullptr) return;
 		Item* cur = items->head;
 		while (cur != nullptr) {
 			Item* cur2 = cur->next;
-			if (cur2 != nullptr)
-				cur2->prev = nullptr;
 			delete cur;
 			cur = cur2;
 		}
-		items->head = nullptr;
-		items->tail = nullptr;
-		size = 0;
+		if (items) {
+			delete items;
+		}
 	}
 
-	void push_back(T data) {
+	void push_back(T data) {//tail показывает на следующий после последнего - ИМЕЕТ ВНУТРИ СЕБЯ ПОЛНУЮ ХУЙНЮ, для итератора так сделал
 		Item* cur;
 		try {
 			cur = new Item(data);
@@ -89,8 +93,7 @@ public:
 			items->tail->prev = cur;
 		}
 		else {
-			if (items->tail == nullptr)
-				items->tail = new Item();
+			if (items->tail == nullptr) items->tail = new Item();//ТИПО ТУДА ФИКТИВНУЮ ПАРАШУ ПОЛОЖИЛИ
 			cur->next = items->tail;
 			items->tail->prev = cur;
 			cur->prev = items->head;
@@ -99,7 +102,7 @@ public:
 		size++;
 	}
 
-	void push(T data, Item* item) {
+	void push(T data, Item* item) {//ВСТАВИТЬ ВМЕСТО НА МЕСТО N ЭЛЕМЕНТА, А ОСТАЛЬНЫЕ ПОДВИНУТЬ
 
 		if (size == 0) {
 			push_back(data);
@@ -125,35 +128,29 @@ public:
 		size++;
 	}
 
-
-
 	void delete_item(Item* item) {
 		if (item == nullptr) {
 			throw SetException(IndexOutOfRange);
 		}
 
-		if (item->prev != nullptr && item->next != items->tail) {
+		if (item->prev != nullptr && item->next != nullptr) {
 			item->prev->next = item->next;
 			item->next->prev = item->prev;
 		}
-		//else if (cur->next == nullptr && cur->prev != nullptr) {
-		//	items->tail = cur->prev;
-		//	items->tail->next = nullptr;
-		//}
-		else if (item->prev == nullptr && item->next != items->tail) {
+		else if (item->prev == nullptr && item->next != nullptr) {
 			items->head = item->next;
 			items->head->prev = nullptr;
 		}
 		else {
-			items->tail->prev = item->prev;
-			item->prev->next = items->tail;
+			items->head = nullptr;
+			items->tail->prev = nullptr;
 		}
 
 		delete item;
 		size--;
 	}
 
-	void SetItem(int index, T item) {
+	void SetItem(int index, T item) {//поставить на N место 
 		Item* cur = items->head;
 		if (index < 0) {
 			throw SetException(IndexOutOfRange);
@@ -195,7 +192,7 @@ public:
 		return true;
 	}
 
-	void push_tobegin(T data) {
+	void push_tobegin(T data) {//вставить в начало
 		if (size == 0) {
 			push_back(data);
 			return;
@@ -207,7 +204,7 @@ public:
 		catch (std::bad_alloc) {
 			throw SetException(MemoryAllocateError);
 		}
-		items->head->prev = cur;
+
 		cur->next = items->head;
 		cur->prev = nullptr;
 		items->head = cur;
@@ -215,22 +212,14 @@ public:
 	}
 
 public:
-	//���������
+	//итераторы
 	using iterator = BidirectionalIterator<T, false>;
 	using const_iterator = BidirectionalIterator<T, true>;
 	iterator begin() {
-		if (items->head == nullptr) {
-			iterator iter(this->items->tail, this);
-			return iter;
-		}
 		iterator iter(this->items->head, this);
 		return iter;
 	}
 	const_iterator cbegin() {
-		if (items->head == nullptr) {
-			const_iterator iter(this->items->tail, this);
-			return iter;
-		}
 		const_iterator iter(this->items->head, this);
 		return iter;
 	}
@@ -243,22 +232,21 @@ public:
 		return iter;
 	}
 
-	//������������
+	//конструкторы
 	LinkedList();
 	LinkedList(size_t, T);
 	LinkedList(T*, int);
-	LinkedList(const LinkedList<T>&);
+	LinkedList(LinkedList<T>*);
 	LinkedList(std::initializer_list<T>);
-	LinkedList(LinkedList<T>&&);
 
-	//�������������
+	//деконструктор
 	~LinkedList();
 
-	//�������
+	//функции
 	T& GetFirst();
 	T& GetLast();
 	T& Get(int);
-	int GetLength() const;
+	int GetLength();
 	void Append(T);
 	void Prepend(T);
 	void Set(int, T);
@@ -267,51 +255,22 @@ public:
 	LinkedList<T>* Concat(LinkedList<T>*);
 	void del_item(iterator&);
 	iterator find(iterator, iterator, T);
-	LinkedList<T>* SplitList(bool(T));
 	bool Equals(LinkedList<T>*);
 	bool IsSubList(LinkedList<T>*);
 
-	//���������
+	//операторы
 	T& operator[](int);
 	bool operator==(LinkedList<T>&);
 	bool operator!=(LinkedList<T>&);
-
-	LinkedList<T>& operator=(const LinkedList<T>& other) {
-		if (this != &other) {
-			/*clear();
-			if (!items)
-				delete items;*/
-			items = CreateList();
-			for (Item* it = other.items->head; it != other.items->tail; it = it->next) {
-				this->push_back(it->data);
-			}
-			size = other.size;
-		}
-		return *this;
-	}
-
-	LinkedList<T>& operator=(LinkedList<T>&& other) {
-		if (this != &other) {
-			clear();
-			if (!items)
-				delete items;
-			this->items = other.items;
-			size = other.size;
-			other.items = nullptr;
-			other.size = 0;
-		}
-
-		return *this;
-	}
 };
 
 
-template<typename T, bool IsConst>
+template<typename T, bool IsConst>//давай забудь опять, что обозначает буловский isConst, сука ты же в сентябре делал ее, хули ты все забыл может названия читать будешь?) 
 class BidirectionalIterator {
 	template<typename T> friend class LinkedList;
 	template<typename T, class _Iterators> friend class Merge_Sort;
-protected:
-	using type = std::conditional_t<IsConst, const T&, T&>;
+private:// тайпнейм нужен, чтобы мы могли создать item типа Item
+	using type = std::conditional_t<IsConst, const T, T>;
 	typename LinkedList<T>::Item* item = nullptr;
 	LinkedList<T>* arr = nullptr;
 public:
@@ -321,8 +280,11 @@ public:
 	BidirectionalIterator(const BidirectionalIterator<T, IsConst>& other) : arr(other.arr) {
 		this->item = &(*other.item);
 	}
-	type operator *() {
+	type& operator *() {
 		return item->data;
+	}
+	BidirectionalIterator<T, IsConst> operator ->() const {
+		return *this;
 	}
 	BidirectionalIterator<T, IsConst>& operator++() {
 		item = item->next;
@@ -341,7 +303,7 @@ public:
 		return *this;
 	}
 
-	BidirectionalIterator<T, IsConst>& operator+=(int t) {
+	BidirectionalIterator<T, IsConst>& operator+=(int t) {//СУКА ДОЛБОЕБ ЭТО НЕ РАНДОМАКССЕСИТЕРАТОР А НЕ БИДИРИКШЕНАЛ
 		for (int i = 0; i < t; i++) {
 			if (item->next == nullptr) {
 				throw SetException(IncorrectRange);
@@ -360,7 +322,7 @@ public:
 		return *this;
 	}
 	BidirectionalIterator<T, IsConst> operator+(int t) {
-		BidirectionalIterator<T, IsConst> newIterator(this->item, this->arr);
+		BidirectionalIterator<T, IsConst> newIterator(this->item, this->arr);// создали новый итератор и вернем новый с шагом +t
 		for (int i = 0; i < t; i++) {
 			newIterator.item = newIterator.item->next;
 		}
@@ -386,21 +348,22 @@ public:
 	}
 };
 
-//������������
+
+//конструкторы уже реализация
 template<class T>
 LinkedList<T>::LinkedList() {
 	items = CreateList();
-	items->tail = new Item();
 }
 
 template<class T>
-LinkedList<T>::LinkedList(size_t size, T value) {
+LinkedList<T>::LinkedList(size_t size, T value) {//сделать массив из одинаковых величин?
 	items = CreateList();
 	for (int i = 0; i < size; i++) {
 		push_back(value);
 	}
 	this->size = size;
 }
+
 template<class T>
 LinkedList<T>::LinkedList(T* items, int count) {
 	this->items = CreateList();
@@ -411,25 +374,17 @@ LinkedList<T>::LinkedList(T* items, int count) {
 	size = count;
 }
 template<class T>
-LinkedList<T>::LinkedList(const LinkedList<T>& other) {
+LinkedList<T>::LinkedList(LinkedList<T>* LL) {//скопировать с другого
 	items = CreateList();
 
-	for (Item* it = other.items->head; it != nullptr && it != other.items->tail; it = it->next) {
-		this->push_back(it->data);
+	for (int i = 0; i < LL->size; i++) {
+		push_back(LL->Get(i));
 	}
-	size = other.size;
+	size = LL->size;
 }
 
 template<class T>
-LinkedList<T>::LinkedList(LinkedList<T>&& other) : items(nullptr), size(0) {
-	items = other.items;
-	size = other.size;
-	other.items = nullptr;
-	other.size = 0;
-}
-
-template<class T>
-LinkedList<T>::LinkedList(std::initializer_list<T> list) {
+LinkedList<T>::LinkedList(std::initializer_list<T> list) { //это когда задаешь через a{}
 	items = CreateList();
 	for (auto i : list) {
 		push_back(i);
@@ -438,15 +393,13 @@ LinkedList<T>::LinkedList(std::initializer_list<T> list) {
 }
 
 
-//�������������
+//деконструктор
 template<class T>
 LinkedList<T>::~LinkedList() {
 	clear();
-	delete items;
-	items = nullptr;
 }
 
-//�������
+//функции
 template<class T>
 T& LinkedList<T>::GetFirst() {
 	return this->GetItem(0);
@@ -463,7 +416,7 @@ T& LinkedList<T>::Get(int index) {
 }
 
 template<class T>
-int LinkedList<T>::GetLength() const {
+int LinkedList<T>::GetLength() {
 	return size;
 }
 
@@ -500,7 +453,7 @@ LinkedList<T>* LinkedList<T>::GetSubList(iterator start, iterator end) {
 }
 
 template<class T>
-LinkedList<T>* LinkedList<T>::Concat(LinkedList<T>* list) {
+LinkedList<T>* LinkedList<T>::Concat(LinkedList<T>* list) {//сложить этот массив с каким-то другим
 	LinkedList<T>* list_res = new LinkedList;
 	for (int i = 0; i < size; i++) {
 		list_res->Append(this->Get(i));
@@ -524,21 +477,10 @@ typename LinkedList<T>::iterator LinkedList<T>::find(iterator start, iterator en
 	for (iterator i = start; i != end; i++) {
 		if (*i == item) return i;
 	}
-	return this->end();
+	return this->end();//вернет итератор на конец, а это у нас что?) правильно конец ахапхахп
 }
 
-template<class T>
-LinkedList<T>* LinkedList<T>::SplitList(bool cmp(T)) {
-	LinkedList<T>* res = new LinkedList<T>;
-	for (iterator i = this->begin(); i != this->end(); i++) {
-		if (cmp(*i)) {
-			res->Append(*i);
-			this->del_item(i);
-			i--;
-		}
-	}
-	return res;
-}
+
 
 template<class T>
 bool LinkedList<T>::Equals(LinkedList<T>* seq) {
@@ -550,15 +492,15 @@ bool LinkedList<T>::Equals(LinkedList<T>* seq) {
 }
 
 template<class T>
-bool LinkedList<T>::IsSubList(LinkedList<T>* seq) {
+bool LinkedList<T>::IsSubList(LinkedList<T>* seq) {//является ли подсписком нашего
 	iterator pos = this->begin();
 	for (iterator i = seq->begin(); i != seq->end() && pos != this->end(); i++) {
-		pos = this->find(pos, this->end(), *i);
+		pos = this->find(pos, this->end(), *i);//вернет итератор енд и если он будет таким вернем фалс
 	}
 	return pos != this->end();
 }
 
-//���������
+//операторы
 template<class T>
 T& LinkedList<T>:: operator[](int index) {
 	return GetItem(index);

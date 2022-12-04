@@ -36,7 +36,7 @@ struct my_pair {
 
 
 
-template<typename _Key, typename _Value, bool CanChangeValue = true>
+template<typename _Key, typename _Value>
 class  RBTree
 {
 private:
@@ -114,13 +114,16 @@ private://функции закрытые от людей, вспомогательные для интерфейсных
 		//тут тупо, просто доходим до нужного элемента и вставляем, покрасив в красный
 		Node* x = root;
 		Node* y = NULL;
-		while (x != NULL)
-		{
+		while (x != NULL){
 			y = x;
 			if (node->data.first > x->data.first)
 				x = x->right;
-			else
+			else if (node->data.first < x->data.first)
 				x = x->left;
+			else if (node->data.first == x->data.first) {
+				x->data.second = node->data.second;
+				return;
+			}
 		}
 		node->parent = y;
 		if (y != NULL)
@@ -461,11 +464,14 @@ public://функции открытые для людей - интерфейс
 	void insert(const _Key key, const _Value value) {   // Вставляем узел, ключ это значение ключа, внешний интерфейс
 		Node* z = new Node(key, value, RED, NULL, NULL, NULL);
 		insert(root, z);
+		_size++;
+
 	};
 	void remove(_Key key){		// Удалить ключевой узел
 		Node* deletenode = search(root, key);
 		if (deletenode != NULL)
 			remove(root, deletenode);
+		_size--;
 	}
 
 	//поиск
@@ -506,11 +512,16 @@ public://функции открытые для людей - интерфейс
 		return Equals(this->root, other.root);
 	}
 
-	bool operator==(const RBTree<_Key, _Value, CanChangeValue>& other) const {
+	bool operator==(const RBTree<_Key, _Value>& other) const {
 		return this->Equals(other);
 	}
-	bool operator!=(const RBTree<_Key, _Value, CanChangeValue>& other) const {
+	bool operator!=(const RBTree<_Key, _Value>& other) const {
 		return !this->Equals(other);
+	}
+	
+	//верни кол-во элементов
+	size_t amount() {
+		return _size;
 	}
 };
 

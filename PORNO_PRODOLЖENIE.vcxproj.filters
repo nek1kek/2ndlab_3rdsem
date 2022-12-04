@@ -27,6 +27,12 @@
     <ClInclude Include="RBtree.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="HashTable.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="Histogram.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source1.cpp">

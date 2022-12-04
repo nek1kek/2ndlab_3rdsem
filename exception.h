@@ -3,7 +3,7 @@
 #include <string>
 enum except_type { MemoryAllocateError, IndexOutOfRange, SizeBelowZero, NegativeRange, 
 	IncorrectComparator, IncorrectRange, IncorrectValue, IncorrectInputFormat, IncorrectIterator, 
-	NoRequiredArgument, UnknownFlag, UnknownCommand, MutuallyExclusive, TooManySort, EmptySequence};
+	NoRequiredArgument, UnknownFlag, UnknownCommand, MutuallyExclusive, KeyNotExist, EmptySequence};
 #include<iostream>
 
 class SetException {
@@ -24,7 +24,7 @@ public:
 		if (id == UnknownCommand) return "Unknown command name,gandon";
 		if (id == IncorrectInputFormat) return "Incorrect Input format";
 		if (id == MutuallyExclusive) return "There are two or more mutually exclusive arguments";
-		if (id == TooManySort) return "You cannot compare too much function at the same time.";
+		if (id == KeyNotExist) return "Key is not in the tree now";
 		if (id == EmptySequence) return "Your sequence is empty";
 	}
 };
