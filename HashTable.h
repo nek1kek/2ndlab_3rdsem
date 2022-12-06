@@ -5,7 +5,50 @@
 
 
 
-/*начинаем делать его и гистограмму на нем*/
+/*
+Проблема resize DynamicArray при Resize выдает ошибку типо удаляет элементы
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -17,11 +60,11 @@ private:
 	_Hash hasher;//_Hash это класс, который создает лишь 1 объект который умеет хешировать, потому не нужно ничего к нему присваивать как объект класса ISorter
 
 	size_t size;
-	size_t hash_table_capacity = 1;
+	int hash_table_capacity = 1;
 	const float max_load_factor = 0.75;
-	float max_in_linkedlist = 3;//ПРОВЕРИТЬ РАБОТАЕТ ЛИ ПРИ 1
+	int max_in_linkedlist = 3;//ПРОВЕРИТЬ РАБОТАЕТ ЛИ ПРИ 1
 
-	DynamicArray<LinkedList>
+	DynamicArray<LinkedList<int>> Hash_vector(1,LinkedList<int>());
 
 
 	struct Node {
@@ -29,20 +72,28 @@ private:
 		std::pair<const _Key, _Value> data;//пара ключ значение
 
 		Node() = default;
-		Node(const Node& other) : data(other.data)//двоеточие - а запихнуй сразу в дата инфу с другого
-		Node(const _Key& key, const _Value& value) : data(key, value) {}
+		Node(const Node& other) : data(other.data) {}//двоеточие - а запихнуй сразу в дата инфу с другого
+		Node(const _Key& key, const _Value& value,size_t _hash) : data(key, value) {
+			hash = _hash;
+		}
 	
-		
 	};
 
 
 private:
+	void rehash() {//вызывается при преодолении макс_лоад_фактор или максинлинкедлист//Сука О(2n)
+		size_t hash_table_capacity = hash_table_capacity * 2 + 1;
+		Hash_vector.Resize(hash_table_capacity)
 
+
+	}
 
 public:
 	//вставка и удаления
 	void insert(const _Key key, const _Value value) {   // Вставляем узел, ключ это значение ключа, внешний интерфейс
-
+		size_t _hash = hasher(key);
+		Node* (key, value, _hash);
+		
 	};
 	void remove(_Key key) {		// Удалить ключевой узел
 
@@ -58,3 +109,7 @@ public:
 	}
 
 	};
+
+
+
+	*/

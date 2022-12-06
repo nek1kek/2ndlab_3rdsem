@@ -67,6 +67,7 @@ public:
 	}
 
 	void clear() {
+		if (!items) return;
 		Item* cur = items->head;
 		while (cur != nullptr) {
 			Item* cur2 = cur->next;
@@ -236,7 +237,9 @@ public:
 	LinkedList();
 	LinkedList(size_t, T);
 	LinkedList(T*, int);
-	LinkedList(LinkedList<T>*);
+	LinkedList(const LinkedList<T>&);
+	LinkedList(LinkedList<T>&&);
+
 	LinkedList(std::initializer_list<T>);
 
 	//деконструктор
@@ -262,6 +265,34 @@ public:
 	T& operator[](int);
 	bool operator==(LinkedList<T>&);
 	bool operator!=(LinkedList<T>&);
+	LinkedList<T>& operator=(const LinkedList<T>& other) {
+		if (this != &other) {
+			clear();
+			if (!items)
+				delete items;
+			size = 0;
+			items = CreateList();
+			for (Item* it = other.items->head; it != other.items->tail; it = it->next) {
+				this->push_back(it->data);
+			}
+			size = other.size;
+		}
+		return *this;
+	}
+
+	LinkedList<T>& operator=(LinkedList<T>&& other) {
+		if (this != &other) {
+			clear();
+			if (!items)
+				delete items;
+			this->items = other.items;
+			size = other.size;
+			other.items = nullptr;
+			other.size = 0;
+		}
+
+		return *this;
+	}
 };
 
 
@@ -373,14 +404,23 @@ LinkedList<T>::LinkedList(T* items, int count) {
 	}
 	size = count;
 }
+
 template<class T>
-LinkedList<T>::LinkedList(LinkedList<T>* LL) {//скопировать с другого
+LinkedList<T>::LinkedList(const LinkedList<T>& other) {
 	items = CreateList();
 
-	for (int i = 0; i < LL->size; i++) {
-		push_back(LL->Get(i));
+	for (Item* it = other.items->head; it != nullptr && it != other.items->tail; it = it->next) {
+		this->push_back(it->data);
 	}
-	size = LL->size;
+	size = other.size;
+}
+
+template<class T>
+LinkedList<T>::LinkedList(LinkedList<T>&& other) : items(nullptr), size(0) {
+	items = other.items;
+	size = other.size;
+	other.items = nullptr;
+	other.size = 0;
 }
 
 template<class T>

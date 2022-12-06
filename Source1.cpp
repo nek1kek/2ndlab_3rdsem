@@ -38,7 +38,7 @@ void a() {
 	tree.postOrder();
 	cout << endl;
 	cout << "Найти узел с ключом 30:";
-	cout << endl << tree.search(30)->data.first << endl;
+	cout << endl << tree.search(111)->data.first << endl;
 	cout << "Удалить узел с ключом 100 \n";
 	tree.remove(100);
 	tree.preOrder();
@@ -55,19 +55,20 @@ void b() {
 		tree1.insert(num, 1);
 		tree2.insert(num, 2);
 	}
-	cout << (tree1 == tree2);
+	//cout << (tree1 == tree2);
 }
 
 
 int main()
 {
-	setlocale(LC_ALL, "Russian");
-	//a();
-	LinkedList<int> z;
-	z.Append(11);
-	cout << z[100];
-	DynamicArray<LinkedList<int>> a(1, LinkedList<int>(1,1));
-	a[1].Append(13);
-	cout << a[0][0];
+	setlocale(LC_ALL, "Rus");
+	RBTree<int, int, true> tree;
+	DynamicArray<int> nums{ 10,40,30,60,90,-1, 70,20,50,80,100 };
+	for (auto num : nums) {
+		tree.insert(1, num);
+		tree.insert(num, 1);
+	}
+	tree.print_values(3);
+	cout << tree.amount();
 }
 

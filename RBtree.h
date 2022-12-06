@@ -34,9 +34,16 @@ struct my_pair {
 	}
 };
 
+template<typename T>
+struct MyComparator {
+	short int operator()(const T& first, const T& second) const noexcept {
+		if (first < second) return -1;
+		if (first > second) return 1;
+		return 0;
+	}
+};
 
-
-template<typename _Key, typename _Value>
+template<typename _Key, typename _Value, bool IsMulti = false, class _cmp = MyComparator<_Key>>
 class  RBTree
 {
 private:
@@ -45,7 +52,7 @@ private:
 		Node* left;
 		Node* right;
 		Node* parent;
-		std::pair<const _Key, _Value> data;//пара ключ значение
+		std::pair<const _Key, LinkedList<_Value>> data;//пара ключ список значений
 		_Color color;
 
 		Node() {
@@ -60,11 +67,12 @@ private:
 			right = nullptr;
 			parent = nullptr;
 		}
-		Node(const _Key& key, const _Value& value, const _Color& color, Node* p, Node* l, Node* r) : data(key, value) {
+		Node(const _Key& key,const  _Value& value, const _Color& color, Node* p, Node* l, Node* r) : data(key, LinkedList<_Value>()) {
 			this->color = color;
 			left = p;
 			right = l;
 			parent = r;
+			data.second.Append(value);
 		}
 
 	};
@@ -121,7 +129,10 @@ private://функции закрытые от людей, вспомогательные дл€ интерфейсных
 			else if (node->data.first < x->data.first)
 				x = x->left;
 			else if (node->data.first == x->data.first) {
-				x->data.second = node->data.second;
+				if (IsMulti == true) {
+					x->data.second.Append(node->data.second[0]);
+				}
+				else x->data.second[0] = node->data.second[0];
 				return;
 			}
 		}
@@ -207,6 +218,7 @@ private://функции закрытые от людей, вспомогательные дл€ интерфейсных
 		node = nullptr;
 	}
 	void remove(Node*& root, Node* node){
+
 		Node* child, * parent;
 		_Color color;
 		// ≈сть 2 ребенка
@@ -295,6 +307,10 @@ private://функции закрытые от людей, вспомогательные дл€ интерфейсных
 		// ”даленный узел €вл€етс€ корневым узлом
 		else
 			RBTree::root = child;// а это было гениально называть локальную переменную так же как глобальную ху€рь с этим теперь)))
+		if (root == nullptr){
+			delete node;
+			return;
+		}
 
 		if (color == BLACK)
 		{
@@ -382,18 +398,33 @@ private://функции закрытые от людей, вспомогательные дл€ интерфейсных
 				return search(node->left, key);
 	}
 
+	void print_values(Node* node) const {
+		cout << "His keys: ";
+		typename LinkedList<_Value>::iterator it = node->data.second.begin();
+		while ( it != node->data.second.end()) {
+			cout << *it << "\t";
+			it++;
+		}
+		cout << endl << endl;
+	
+	}
+
 	void print(Node* node)const {  //напечатать уже с какого-то узла
 		if (node == NULL)
 			return;
-		if (node->parent == NULL)
+		if (node->parent == NULL){
 			cout << node->data.first << "(" << node->color << ") is root" << endl;
+			print_values(node);
+		}
 		else if (node->parent->left == node)
 		{
 			cout << node->data.first << "(" << node->color << ") is " << node->parent->data.first << "'s " << "left child" << endl;
+			print_values(node);
 		}
 		else
 		{
 			cout << node->data.first << "(" << node->color << ") is " << node->parent->data.first << "'s " << "right child" << endl;
+			print_values(node);
 		}
 		print(node->left);
 		print(node->right);
@@ -424,7 +455,7 @@ private://функции закрытые от людей, вспомогательные дл€ интерфейсных
 
 	bool Equals(const Node* cur, const Node* other) const {
 		if (cur == other && cur == nullptr) return true;
-		if (cur->data != other->data) return false;
+		if (cur->data.first != other->data.first) return false;
 		if (cur->color != other->color) return false;
 		return Equals(cur->left, other->left) && Equals(cur->right, other->right);
 	}
@@ -474,6 +505,20 @@ public://функции открытые дл€ людей - интерфейс
 		_size--;
 	}
 
+	void remove(_Key key, _Value value){
+		Node* deletenode = search(root, key);
+		if (deletenode != NULL)
+			if (IsMulti && deletenode->data.second.GetLength() > 1) {
+				typename LinkedList<_Value>::iterator it = deletenode->data.second.find(deletenode->data.second.begin(), deletenode->data.second.end(), value);//нашел итератор на нужный
+				if (it == deletenode->data.second.end()) throw SetException(NoSuchElement);//если нет, то ошибочку
+				deletenode->data.second.del_item(it);//а в целом удал€й
+				//удалить значение и все
+				return;
+			}
+			else if (deletenode->data.second[0] == value) remove(key);//если всего один элемент в ключе и он равен значению
+			else return;//то есть если тут он не нашел такого ключа-значение
+	}
+
 	//поиск
 	Node* search(_Key key){
 		return search(root, key);
@@ -507,19 +552,27 @@ public://функции открытые дл€ людей - интерфейс
 			postOrder(root);
 	};
 
+	void print_values(_Key key) {
+		Node* node = search(root, key);
+		if (node) {
+			cout << "Key: " << key << endl;
+			print_values(node);
+		}
+	}
+
 	//сравнени€ деревьев:
 	bool Equals(const RBTree<_Key, _Value>& other) const {
 		return Equals(this->root, other.root);
 	}
 
-	bool operator==(const RBTree<_Key, _Value>& other) const {
+	bool operator == (const RBTree<_Key, _Value>& other) const {
 		return this->Equals(other);
 	}
 	bool operator!=(const RBTree<_Key, _Value>& other) const {
 		return !this->Equals(other);
 	}
 	
-	//верни кол-во элементов
+	//верни кол-во элементов ключ-значение
 	size_t amount() {
 		return _size;
 	}

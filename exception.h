@@ -3,7 +3,8 @@
 #include <string>
 enum except_type { MemoryAllocateError, IndexOutOfRange, SizeBelowZero, NegativeRange, 
 	IncorrectComparator, IncorrectRange, IncorrectValue, IncorrectInputFormat, IncorrectIterator, 
-	NoRequiredArgument, UnknownFlag, UnknownCommand, MutuallyExclusive, KeyNotExist, EmptySequence};
+	NoRequiredArgument, UnknownFlag, UnknownCommand, MutuallyExclusive, KeyNotExist, EmptySequence, NoSuchElement
+};
 #include<iostream>
 
 class SetException {
@@ -26,5 +27,8 @@ public:
 		if (id == MutuallyExclusive) return "There are two or more mutually exclusive arguments";
 		if (id == KeyNotExist) return "Key is not in the tree now";
 		if (id == EmptySequence) return "Your sequence is empty";
+		if (id == NoSuchElement) return "No such element in RBTree";
+
+		
 	}
 };
