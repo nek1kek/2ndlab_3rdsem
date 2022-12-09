@@ -43,7 +43,10 @@ public:
 	};
 
 
-
+	bool empty()
+	{
+		return RBT::_size == 0;
+	}
 	void insert(const _Key& key) {
 		RBTree<_Key, _Key, MultiSet, _cmp>::insert(key, key);
 	}
@@ -52,8 +55,17 @@ public:
 	}
 
 	int count(const _Key& key) {//возращает кол-во элементов со значением таким
-		return RBT::get(key).GetLength();
-
+		try {
+			return this->get(key).GetLength();
+		}
+		catch (SetException e) {
+			if (e.id == NoSuchElement) {
+				return 0;
+			}
+			else {
+				throw e;
+			}
+		}
 	};
 
 	void print() {
@@ -91,7 +103,7 @@ public:
 		 return cur->data.second[0];
 	 }
 
-	 //получ
+	 //оператор присваивания как конструктор копирования
 	 
 
 };

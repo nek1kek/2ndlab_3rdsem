@@ -3,6 +3,7 @@
 #include "DynamicArray.h"
 #include "LinkedList.h"
 #include "ISet.h"
+#include "IDictionary.h"
 #include<iostream>
 #include<vector>
 using namespace std;
@@ -75,4 +76,30 @@ void c()
 
 int main() {
 
+
+
+	DynamicArray<int> nums{ 1,1,1,1,2,3,4,5,6,7};
+	IDictionary<int, int> dict;
+	for (auto num : nums)
+		dict[num] = 123;
+	dict.print();
+	cout << dict.count(13);
+
+	//cout << "10: "<< set.amount() << endl;
+
+	//set.remove(40);
+	//cout <<"10: "<< set.amount() << endl;
+
+
+	//set.remove(4);
+	//cout << "9: " << set.amount() << endl;
+
+	//set.remove(4);
+	//cout << "9: " << set.amount() << endl;
+
+	//set.remove(1);
+	//cout << "8: " << set.amount() << endl;
+
+	//set.print();
+	//cout<<set.amount();//8 должно быть
 }

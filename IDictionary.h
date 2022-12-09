@@ -7,24 +7,58 @@ protected:
 	_Value& get(const _Key& key) {
 		return RBT::get(key)[0];
 	}
-
 public:
 	using RBT = RBTree<_Key, _Value, false, _cmp>;
 
-	IDictionary() : RBT() {}
-	IDictionary(const Dictionary<_Key, _Value, _cmp>& other) : RBT(other) {
+	IDictionary() : RBT() {};
+	IDictionary(const IDictionary<_Key, _Value, _cmp>& other) : RBT(other) {};
+	~IDictionary() = default;
+
+	void inOrder(RBT::Node* cur, bool& putpoint)const {//для принта
+		if (cur != NULL) {
+			inOrder(cur->left, putpoint);
+			if (putpoint) { cout << ", "; }
+			cout << cur->data.first << ":" << cur->data.second[0];
+			putpoint = true;
+			inOrder(cur->right, putpoint);
+		}
+	}
+	void print() {//выводить значения
+		cout << "IDictionary: {";
+		bool putpoint = false;
+		inOrder(RBT::root, putpoint);
+		cout << "}" << endl;
 	}
 
-	//гет нужно будет прописать
 
-
-	_Value& operator[](const _Key& key) {
+	int count(const _Key& key) {//возращает 1 при нахождении ключа, 0 при нет
 		try {
-			return this->get(key);
+			_Value& a = this->get(key);
+			return 1;
 		}
 		catch (SetException e) {
 			if (e.id == NoSuchElement) {
-				RBTree<_Key, _Value, true, false, _cmp>::insert(key, _Value());
+				return 0;
+			}
+			else {
+				throw e;
+			}
+		}
+	};
+	size_t amount() { 
+		return this->_size;
+	};//кол-во ключей в словаре возвращает
+
+
+
+	_Value& operator[](const _Key& key) {//для возврата значения
+		//ЕБАТЬ ОН ЖЕ ВОЗВРАЩАЕТ ССЫЛКУ
+		try {
+			return this->get(key);//ЕБАТЬ ПОТОМУ ЧТО ОН ВОЗВРАЩАЕТ, ТО ПРОПИСАВ = ПОСЛЕ dict[_Key] он присвоит значение после знака равно 
+		}
+		catch (SetException e) {
+			if (e.id == NoSuchElement) {
+				RBT::insert(key, _Value());
 				return this->get(key);
 			}
 			else {
@@ -32,5 +66,4 @@ public:
 			}
 		}
 	}
-	~Dictionary() = default;
 };

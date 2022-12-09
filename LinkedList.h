@@ -299,7 +299,6 @@ public:
 template<typename T, bool IsConst>//давай забудь опять, что обозначает буловский isConst, сука ты же в сентябре делал ее, хули ты все забыл может названия читать будешь?) 
 class BidirectionalIterator {
 	template<typename T> friend class LinkedList;
-	template<typename T, class _Iterators> friend class Merge_Sort;
 private:// тайпнейм нужен, чтобы мы могли создать item типа Item
 	using type = std::conditional_t<IsConst, const T, T>;
 	typename LinkedList<T>::Item* item = nullptr;
