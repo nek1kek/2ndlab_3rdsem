@@ -2,11 +2,11 @@
 #include"Rbtree.h"
 #include "DynamicArray.h"
 #include "LinkedList.h"
-
+#include "ISet.h"
 #include<iostream>
 #include<vector>
 using namespace std;
-
+#include <map>;
 
 void a() {
 	vector<int> nums{ 10,40,30,60,90,-1, 70,20,50,80,100 };
@@ -38,7 +38,7 @@ void a() {
 	tree.postOrder();
 	cout << endl;
 	cout << "Найти узел с ключом 30:";
-	cout << endl << tree.search(111)->data.first << endl;
+	cout << endl << tree.search(30)->data.first << endl;
 	cout << "Удалить узел с ключом 100 \n";
 	tree.remove(100);
 	tree.preOrder();
@@ -59,16 +59,20 @@ void b() {
 }
 
 
-int main()
+void c()
 {
-	setlocale(LC_ALL, "Rus");
-	RBTree<int, int, true> tree;
-	DynamicArray<int> nums{ 10,40,30,60,90,-1, 70,20,50,80,100 };
-	for (auto num : nums) {
-		tree.insert(1, num);
-		tree.insert(num, 1);
-	}
-	tree.print_values(3);
-	cout << tree.amount();
+	/*
+	ISet<int> a;
+	a.Get123();
+	a.insert(1);*/
+	LinkedList<double> b{ 1.2,1.3,1.2 };
+	ISet<double,true> Z(b);
+	cout << Z.get_min() << endl;
+	Z.print();
+	cout << Z.amount() << endl;
+
 }
 
+int main() {
+
+}

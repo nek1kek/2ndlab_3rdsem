@@ -43,10 +43,11 @@ struct MyComparator {
 	}
 };
 
+
 template<typename _Key, typename _Value, bool IsMulti = false, class _cmp = MyComparator<_Key>>
 class  RBTree
 {
-private:
+protected:
 	enum _Color { BLACK, RED, None };
 	struct Node {
 		Node* left;
@@ -74,13 +75,17 @@ private:
 			parent = r;
 			data.second.Append(value);
 		}
+		Node(const Node* other) : data(other->data) {}
+
 
 	};
+
+	//_cmp comparator; // comparator(cur->data.first, key)>0 так используетс€ дл€ сравнени€, если всеже захочу юзать компаратор нужно будет везде заменить 
 
 	Node* root;//туда всавл€етс€ самый первый элемент
 	size_t _size;
 
-private://функции закрытые от людей, вспомогательные дл€ интерфейсных
+protected://функции закрытые от людей, вспомогательные дл€ интерфейсных
 	void leftRotate(Node*& root, Node* x) {// левый поворот
 		Node* y = x->right;
 		x->right = y->left;
@@ -132,7 +137,11 @@ private://функции закрытые от людей, вспомогательные дл€ интерфейсных
 				if (IsMulti == true) {
 					x->data.second.Append(node->data.second[0]);
 				}
-				else x->data.second[0] = node->data.second[0];
+				else
+				{
+					x->data.second[0] = node->data.second[0];
+					_size--;
+				}
 				return;
 			}
 		}
@@ -210,7 +219,7 @@ private://функции закрытые от людей, вспомогательные дл€ интерфейсных
 	}
 
 	void destroy(Node*& node) {		//удалить все поддерево с этого узла
-		if (node == NULL)
+		if (node == nullptr)
 			return;
 		destroy(node->left);
 		destroy(node->right);
@@ -500,23 +509,26 @@ public://функции открытые дл€ людей - интерфейс
 	};
 	void remove(_Key key){		// ”далить ключевой узел
 		Node* deletenode = search(root, key);
-		if (deletenode != NULL)
+		if (deletenode != NULL) {
 			remove(root, deletenode);
-		_size--;
+			_size--;
+		}
 	}
 
 	void remove(_Key key, _Value value){
 		Node* deletenode = search(root, key);
-		if (deletenode != NULL)
+		if (deletenode != NULL) {
 			if (IsMulti && deletenode->data.second.GetLength() > 1) {
 				typename LinkedList<_Value>::iterator it = deletenode->data.second.find(deletenode->data.second.begin(), deletenode->data.second.end(), value);//нашел итератор на нужный
 				if (it == deletenode->data.second.end()) throw SetException(NoSuchElement);//если нет, то ошибочку
 				deletenode->data.second.del_item(it);//а в целом удал€й
 				//удалить значение и все
+				_size--;
 				return;
 			}
 			else if (deletenode->data.second[0] == value) remove(key);//если всего один элемент в ключе и он равен значению
 			else return;//то есть если тут он не нашел такого ключа-значение
+		}
 	}
 
 	//поиск
@@ -576,6 +588,42 @@ public://функции открытые дл€ людей - интерфейс
 	size_t amount() {
 		return _size;
 	}
+
+
+	LinkedList<_Value>& get(const _Key& key) {
+		Node* cur = root;
+		while (cur != nullptr) {
+
+			if (cur->data.first < key) {
+				cur = cur->right;
+			}
+			else if (cur->data.first > key) {
+				cur = cur->left;
+			}
+			else {
+				return cur->data.second;
+			}
+		}
+		if (cur == nullptr) throw SetException(NoSuchElement);
+	}
+
+
+
+	void erase(Node* cur ) {
+		if (cur != nullptr) {
+			erase(cur->left);
+			erase(cur->right);
+			delete cur;
+		}
+	}
+
+	void erase() {
+		Node* cur = root;
+		root = nullptr;
+		erase(cur);
+		_size = 0;
+	}
+
 };
 
 

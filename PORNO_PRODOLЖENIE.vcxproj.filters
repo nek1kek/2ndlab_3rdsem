@@ -33,6 +33,12 @@
     <ClInclude Include="Histogram.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="ISet.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="IDictionary.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source1.cpp">

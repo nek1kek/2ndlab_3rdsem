@@ -3,7 +3,7 @@
 #include <string>
 enum except_type { MemoryAllocateError, IndexOutOfRange, SizeBelowZero, NegativeRange, 
 	IncorrectComparator, IncorrectRange, IncorrectValue, IncorrectInputFormat, IncorrectIterator, 
-	NoRequiredArgument, UnknownFlag, UnknownCommand, MutuallyExclusive, KeyNotExist, EmptySequence, NoSuchElement
+	NoRequiredArgument, UnknownFlag, EmptySet, UnknownCommand, MutuallyExclusive, KeyNotExist, EmptySequence, NoSuchElement
 };
 #include<iostream>
 
@@ -28,6 +28,8 @@ public:
 		if (id == KeyNotExist) return "Key is not in the tree now";
 		if (id == EmptySequence) return "Your sequence is empty";
 		if (id == NoSuchElement) return "No such element in RBTree";
+		if (id == EmptySet) return "No such element in ISet";
+
 
 		
 	}
