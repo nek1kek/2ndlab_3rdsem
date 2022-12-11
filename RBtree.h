@@ -4,6 +4,15 @@
 
 using namespace std;
 
+template<typename T>
+struct MyComparator {
+	short int operator()(const T& first, const T& second) const noexcept {
+		if (first < second) return -1;
+		if (first > second) return 1;
+		return 0;
+	}
+};
+
 template<typename T, typename V>//это у нас ключ значение
 struct my_pair {
 	T first;
@@ -34,394 +43,378 @@ struct my_pair {
 	}
 };
 
-template<typename T>
-struct MyComparator {
-	short int operator()(const T& first, const T& second) const noexcept {
-		if (first < second) return -1;
-		if (first > second) return 1;
-		return 0;
-	}
-};
-
 
 template<typename _Key, typename _Value, bool IsMulti = false, class _cmp = MyComparator<_Key>>
-class  RBTree
-{
+class RBTree {
 protected:
 	enum _Color { BLACK, RED, None };
 	struct Node {
-		Node* left;
 		Node* right;
+		Node* left;
 		Node* parent;
-		std::pair<const _Key, LinkedList<_Value>> data;//пара ключ список значений
+		std::pair<const _Key, LinkedList<_Value>> data;
 		_Color color;
 
-		Node() {
-			right = nullptr;
-			left = nullptr;
-			parent = nullptr;
-		}
 
-		Node(const Node& other) : data(other.data) {//двоеточие - а запихнуй сразу в дата инфу с другого
-			this->color = other.color;
-			left = nullptr;
+		Node() : std::pair<const _Key, LinkedList<_Value>>(_Key(), LinkedList<_Value>()) {
 			right = nullptr;
+			left = nullptr;
 			parent = nullptr;
 		}
-		Node(const _Key& key,const  _Value& value, const _Color& color, Node* p, Node* l, Node* r) : data(key, LinkedList<_Value>()) {
-			this->color = color;
-			left = p;
-			right = l;
-			parent = r;
-			data.second.Append(value);
+		Node(const Node& other) : data(other.data) {
+			this->color = other.color;
+			left = other.left;
+			right = other.right;
+			parent = other.parent;
 		}
 		Node(const Node* other) : data(other->data) {}
-
-
+		Node(const _Key& key, const _Value& value, const _Color& color) : data(key, LinkedList<_Value>()) {
+			this->color = color;
+			data.second.Append(value);
+			left = nullptr;
+			right = nullptr;
+			parent = nullptr;
+		}
+		~Node() = default;
 	};
 
-	//_cmp comparator; // comparator(cur->data.first, key)>0 так используется для сравнения, если всеже захочу юзать компаратор нужно будет везде заменить 
-
-	Node* root;//туда всавляется самый первый элемент
+	_cmp comparator;// comparator(cur->data.first, key)>0 так используется для сравнения, если все же захочу юзать компаратор нужно будет везде заменить 
+	Node* root = nullptr;//туда вставляется самый первый элемент
 	size_t _size;
 
+	
 protected://функции закрытые от людей, вспомогательные для интерфейсных
-	void leftRotate(Node*& root, Node* x) {// левый поворот
-		Node* y = x->right;
-		x->right = y->left;
-		if (x->right != NULL)
-			x->right->parent = x;
+	void clear(Node* cur) noexcept {//очистка дерева
+		if (cur == nullptr) return;
+		Node* right = cur->right;
+		Node* left = cur->left;
 
-		y->parent = x->parent;
-		if (y->parent == NULL)
-			root = y;
-		else {
-			if (x == x->parent->left)
-				x->parent->left = y;//чтобы поставить у будущего отца 'y' что у это сын его
-			else
-				x->parent->right = y;
+		delete cur;
+		clear(right);
+		clear(left);
+	}
+
+	Node* get_uncle(const Node* cur) noexcept {
+		if (cur->parent->parent == nullptr) {
+			return nullptr;
 		}
-		y->left = x;
-		x->parent = y;
-	};
-	void rightRotate(Node*& root, Node* y) {// правый поворот
-		Node* x = y->left;
-		y->left = x->right;
-		if (x->right != NULL)
-			x->right->parent = y;
+		if (cur->parent == cur->parent->parent->left)
+			return cur->parent->parent->right;
+		return cur->parent->parent->left;
+	}
+	Node* getbrother(const Node* p) noexcept {
+		return isRight(p) ? p->parent->left : p->parent->right;
+	}
 
-		x->parent = y->parent;
-		if (y->parent == NULL)
-			root = x;
-		else {
-			if (y == y->parent->right)
-				y->parent->right = x;
-			else
-				y->parent->left = x;
+	void rotateRight(Node* cur) noexcept {
+		Node* p = cur->left;
+		if (!p) return;
+		if (cur == root) root = p;
+		cur->left = p->right;
+		if (p->right)
+			p->right->parent = cur;
+		if (isRight(cur) && cur->parent != nullptr) {
+			cur->parent->right = p;
 		}
-		x->right = y;
-		y->parent = x;
-	};
+		else if (cur->parent != nullptr) {
+			cur->parent->left = p;
+		}
+		p->right = cur;
+		p->parent = cur->parent;
+		cur->parent = p;
+	}
+	void rotateLeft(Node* cur) noexcept {
+		Node* p = cur->right;
+		if (!p) return;
+		if (cur == root) root = p;
+		cur->right = p->left;
+		if (p->left)
+			p->left->parent = cur;
+		if (isRight(cur) && cur->parent != nullptr) {
+			cur->parent->right = p;
+		}
+		else if (cur->parent != nullptr) {
+			cur->parent->left = p;
+		}
+		p->left = cur;
+		p->parent = cur->parent;
+		cur->parent = p;
+	}
 
-	void insert(Node*& root, Node* node) {	// Вставляем узел, внутренний интерфейс
-		//тут тупо, просто доходим до нужного элемента и вставляем, покрасив в красный
-		Node* x = root;
-		Node* y = NULL;
-		while (x != NULL){
-			y = x;
-			if (node->data.first > x->data.first)
-				x = x->right;
-			else if (node->data.first < x->data.first)
-				x = x->left;
-			else if (node->data.first == x->data.first) {
-				if (IsMulti == true) {
-					x->data.second.Append(node->data.second[0]);
+	Node* nearest_key(const Node* cur) noexcept {//вправо и влево до конца
+		Node* res = cur->right;
+		while (res->left != nullptr) {
+			res = res->left;
+		}
+		return res;
+	}
+	bool isRight(const Node* cur) noexcept {
+		if (cur->parent == nullptr) {
+			return false;
+		}
+		return cur->parent->right == cur;
+	}
+	_Color GetChildColors(const Node* cur) noexcept {//вернет None, если разные цвета, либо один общий
+		_Color res = BLACK;
+		if (cur->right != nullptr) {
+			if (cur->right->color == RED) {
+				res = RED;
+			}
+			else {
+				res = BLACK;
+			}
+		}
+		if (cur->left != nullptr) {
+			if (cur->left->color != res) {
+				res = None;
+			}
+		}
+		return res;
+	}
+
+	void make_tree(Node* cur, const Node* other) {
+		if (other == nullptr) return;
+		if (other->left != nullptr) {
+			cur->left = new Node(*other->left);
+			cur->left->parent = cur;
+		}
+		if (other->right != nullptr) {
+			cur->right = new Node(*other->right);
+			cur->right->parent = cur;
+		}
+		make_tree(cur->left, other->left);
+		make_tree(cur->right, other->right);
+	}
+
+	bool Equals(const Node* cur, const Node* other) const noexcept {
+		if (cur == other && cur == nullptr) return true;
+		if (cur == nullptr) return false;
+		if (other == nullptr) return false;
+		if (cur->data.first != other->data.first) return false;
+		if (cur->data.second != other->data.second) return false;
+		if (cur->color != other->color) return false;
+		return Equals(cur->left, other->left) && Equals(cur->right, other->right);
+	}
+
+
+	void fixNode(Node* cur) noexcept {
+		while (cur->parent != nullptr && cur->parent->color == RED) {
+			Node* uncle = get_uncle(cur);
+			if (!isRight(cur->parent)) {
+				if (uncle != nullptr && uncle->color == RED) {//в заметках 3а вставка
+					cur->parent->color = BLACK;
+					uncle->color = BLACK;
+					cur->parent->parent->color = RED;
+					cur = cur->parent->parent;
 				}
-				else
-				{
-					x->data.second[0] = node->data.second[0];
-					_size--;
+				else {//3б вставкае
+					if (isRight(cur)) {
+						cur = cur->parent;
+						rotateLeft(cur);
+					}
+					cur->parent->color = BLACK;
+					cur->parent->parent->color = RED;
+					rotateRight(cur->parent->parent);
 				}
+			}
+			else {
+				if (uncle != nullptr && uncle->color == RED) {
+					cur->parent->color = BLACK;
+					uncle->color = BLACK;
+					cur->parent->parent->color = RED;
+					cur = cur->parent->parent;
+				}
+				else {
+					if (!isRight(cur)) {
+						cur = cur->parent;
+						rotateRight(cur);
+					}
+					cur->parent->color = BLACK;
+					cur->parent->parent->color = RED;
+					rotateLeft(cur->parent->parent);
+				}
+			}
+		}
+		this->root->color = BLACK;
+	}
+	Node* move_Node(Node* first, Node* second) {//копирует из второго в первый
+		//скопируем всю инфу первого
+		Node* parent = first->parent;
+		Node* left = first->left;
+		Node* right = first->right;
+		_Color clr = first->color;
+		bool check = (first->parent) == nullptr;
+		bool isright = isRight(first);
+		delete first;
+		
+		//переписываем все со второго в первый
+		first = new Node(second);
+		if (check) root = first;
+
+		first->left = left;
+		if (first->left != nullptr) {
+			first->left->parent = first;
+		}
+
+		first->right = right;
+		if (first->right != nullptr) {
+			first->right->parent = first;
+		}
+
+		first->parent = parent;
+		if (first->parent != nullptr) {
+			if (isright)
+				first->parent->right = first;
+			else
+				first->parent->left = first;
+		}
+		first->color = clr;
+		return first;
+	}
+
+
+	void delete_Node(Node* cur) noexcept {
+
+		//0 children - just delete this shit
+		if (cur->left == nullptr && cur->right == nullptr) {
+			if (cur->parent == nullptr) {//root
+				root = nullptr;
+				delete cur;
+				return;
+			}
+			if (cur->color == RED) { //red
+				if (isRight(cur)) {
+					cur->parent->right = nullptr;
+				}
+				else {
+					cur->parent->left = nullptr;
+				}
+				delete cur;
+				return;
+			}
+
+			//black Node deleting
+			fixdelete(cur);//only there we use fixdelete
+			if (isRight(cur)) cur->parent->right = nullptr;
+			else cur->parent->left = nullptr;
+			delete cur;
+			return;
+		}
+
+		//1 child
+		if ((cur->left == nullptr) ^ (cur->right == nullptr)) {//see i know cool programming i use XOR))
+			if (cur->parent == nullptr) { //cur - root, easy level
+				this->root = cur->right != nullptr ? cur->right : cur->left;
+				if (cur->right != nullptr) {
+					cur->right->color = BLACK;
+					cur->right->parent = nullptr;
+				}
+				else {
+					cur->left->color = BLACK;
+					cur->left->parent = nullptr;
+				}
+				delete cur;
+				return;
+			}
+
+			//red impossible the fourth principle is violated(see in notes we must have equal black nodes)
+
+			//black Node deleting
+			if (cur->right != nullptr) {
+				cur = move_Node(cur, cur->right);//we just place son on his place
+				delete_Node(cur->right);//now we must delete same child
+				return;
+			}
+			else {
+				cur = move_Node(cur, cur->left);//we just place son on his place
+				delete_Node(cur->left);//now we must delete same child 
 				return;
 			}
 		}
-		node->parent = y;
-		if (y != NULL)
-		{
-			if (node->data.first > y->data.first)
-				y->right = node;
-			else
-				y->left = node;
-		}
-		else
-			root = node;
-		node->color = RED;
-		InsertFixUp(root, node);
-	};
-	void InsertFixUp(Node*& root, Node* node){
-		//Владимир Владимирович, не бейте пж, но я лекции МФТИ смотрел...
-		//https://www.youtube.com/watch?v=RnQYXltlkrI
-		Node* parent = node->parent;
-		while (node != RBTree::root && parent->color == RED)//(рекурсивно доходим до корня при условиях везде красный) условие, что отец красный 
-		{
-			Node* gparent = parent->parent;
-			if (gparent->left == parent)
-			{
-				Node* uncle = gparent->right;
-				if (uncle != NULL && uncle->color == RED)//условие при красном дяде (в тетке под пунктом 3а)
-				{
-					parent->color = BLACK;
-					uncle->color = BLACK;
-					gparent->color = RED;
-					node = gparent;//идем рекурсивно к деду, как и писал выше
-					parent = node->parent;//тут еще нужно будет проверить вышестоящих
-				}
-				else//дядя черный, отец красный
-				{
-					if (parent->right == node)//в тетке рисунок справа
-					{
-						leftRotate(root, parent);//Хитро да), в тетке рисунок слева
-						swap(node, parent);
-					}
-					rightRotate(root, gparent);//в тетке рисунок спрва
-					gparent->color = RED;
-					parent->color = BLACK;
-					break;//а тут уже не нужно будет рекурсивно, так как черным стал, а черным хоть сколько подряд)
-				}
-			}
-			else
-			{
-				Node* uncle = gparent->left;
-				if (uncle != NULL && uncle->color == RED)
-				{
-					gparent->color = RED;
-					parent->color = BLACK;
-					uncle->color = BLACK;
 
-					node = gparent;
-					parent = node->parent;
+		//2 children
+		Node* nearest = nearest_key(cur);//right and down left to the end
+		cur = move_Node(cur, nearest);//replace
+		delete_Node(nearest);//delete nearest
+		return;
+	}
+	void fixdelete(Node* p) noexcept {
+		if (p == root) return;
+		Node* bro = getbrother(p);
+		if (bro->color == BLACK) { //black bro 2b in notes
+			if (GetChildColors(bro) == BLACK) { //2бI case in notes
+				bro->color = RED;
+				if (p->parent->color == RED) {
+					p->parent->color = BLACK;
+					return;
 				}
-				else
-				{
-					if (parent->left == node)
-					{
-						rightRotate(root, parent);
-						swap(parent, node);
-					}
-					leftRotate(root, gparent);
-					parent->color = BLACK;
-					gparent->color = RED;//так как сделали поворот(+swap), то самый верхний черный уже
-					break;//а тут уже не нужно будет рекурсивно, так как черным стал, а черным хоть сколько подряд)
+				else {
+					fixdelete(p->parent);
+					return;
+				}
+			}
+			if (!isRight(p)) {
+				if (bro->right != nullptr && bro->right->color == RED) { //right child is red
+					bro->color = p->parent->color;
+					if (bro->right != nullptr)
+						bro->right->color = BLACK;
+					bro->parent->color = BLACK;
+					rotateLeft(bro->parent);
+					return;
+				}
+				if (bro->left->color == RED && (bro->right == nullptr || bro->right->color == BLACK)) { //left child is red and right is black
+					std::swap(bro->left->color, bro->color);//changing colors
+					rotateRight(bro);
+					fixdelete(p);
+					return;
+				}
+			}
+			else {//the same situation but inverse in Right/left
+				if (bro->left != nullptr && bro->left->color == RED) { //right child is red
+					bro->color = p->parent->color;
+					if (bro->left != nullptr)
+						bro->left->color = BLACK;
+					bro->parent->color = BLACK;
+					rotateRight(bro->parent);
+					return;
+				}
+				if (bro->right->color == RED && (bro->left == nullptr || bro->left->color == BLACK)) { //left child is red and right is black
+					std::swap(bro->right->color, bro->color);
+					rotateLeft(bro);
+					fixdelete(p);
+					return;
 				}
 			}
 		}
-		root->color = BLACK;
+		
+		//red bro 2a in notes
+		p->parent->color = RED;
+		bro->color = BLACK;
+		if (!isRight(p)) {
+			rotateLeft(p->parent);
+		}
+		else {
+			rotateRight(p->parent);
+		}
+		fixdelete(p);//go to 2б in notes
+		return;
 	}
 
-	void destroy(Node*& node) {		//удалить все поддерево с этого узла
-		if (node == nullptr)
-			return;
-		destroy(node->left);
-		destroy(node->right);
-		delete node;
-		node = nullptr;
-	}
-	void remove(Node*& root, Node* node){
-
-		Node* child, * parent;
-		_Color color;
-		// Есть 2 ребенка
-		if (node->left != NULL && node->right != NULL)
-		{
-			Node* replace = node;
-			// Найти самый нижний левый узел правого поддерева текущего узла
-			replace = node->right;
-			while (replace->left != NULL)
-			{
-				replace = replace->left;
-			}
-			// Случай, когда удаленный узел не является корневым узлом
-			if (node->parent != NULL)
-			{//тупо смотрим куда вставлять для отца ссылку
-				if (node->parent->left == node)
-					node->parent->left = replace;
-				else
-					node->parent->right = replace;
-			}
-			// Ситуация с корневым узлом
-			else
-				root = replace;
-			// child - это правильный узел, который заменяет наш и является узлом, который требует последующей корректировки
-			//ТАК КАК МЫ ЗАМЕНИЛИ НА САМЫЙ ЛЕВЫЙ СПРАВА NODE, ТО У НЕГО (REPLACE) МОЖЕТ БЫТЬ ТОЛЬКО ПРАВЫЙ СЫНОК
-			/*
-				   node
-					/ \
-				  ...   *
-					   /\
-					...	 ...		
-					/   \
-				replace  ...
-				  /  \
-			   None  child
-			*/
-			
-			
-			child = replace->right;
-			parent = replace->parent;
-			color = replace->color;
-
-			// Удаленный узел является родительским узлом замещающего узла (replace)
-			if (parent == node)
-				parent = replace;
-			else
-			{	//я сука на следующий день встал и забыл как ночью дописал, легче рисовать))))
-				// Существование дочернего узла
-				if (child != NULL)
-					child->parent = parent;
-				parent->left = child;
-
-				replace->right = node->right;
-				node->right->parent = replace;
-			}
-			replace->parent = node->parent;
-			replace->color = node->color;
-			replace->left = node->left;
-			node->left->parent = replace;
-			if (color == BLACK)//не забываем, что на красного всем пох, удалили и х*й с ним)))
-				removeFixUp(root, child, parent);//мы передаем ребенка и отца
-
-			delete node;
-			return;
-		}
-		// Когда 1 ребенок, найдите дочерний узел удаленного узла
-		if (node->left != NULL)
-			child = node->left;
-		else
-			child = node->right;
-
-		//в целом если сирот не будет, то тоже норм
-		parent = node->parent;
-		color = node->color;
-
-		if (child) child->parent = parent;
-
-		// Удаленный узел не является корневым узлом
-		if (parent)
-		{
-			if (node == parent->left)
-				parent->left = child;
-			else
-				parent->right = child;
-		}
-		// Удаленный узел является корневым узлом
-		else
-			RBTree::root = child;// а это было гениально называть локальную переменную так же как глобальную хуярь с этим теперь)))
-		if (root == nullptr){
-			delete node;
-			return;
-		}
-
-		if (color == BLACK)
-		{
-			removeFixUp(root, child, parent);//мы передаем ребенка и отца у удаленного элемента прошу заметить
-		}
-		delete node;
-
-	}
-	void removeFixUp(Node*& root, Node* node, Node* parent){
-		Node* othernode;//брат короче
-		while ((!node) || node->color == BLACK && node != RBTree::root)
-		{
-			if (parent->left == node)
-			{
-				othernode = parent->right;
-				if (othernode->color == RED)//случай а) в тетке
-				{
-					othernode->color = BLACK;
-					parent->color = RED;
-					leftRotate(root, parent);
-					othernode = parent->right;//чтобы перейти в случай б) в тетке
-				}
-				else
-				{
-					if (!(othernode->right) || othernode->right->color == BLACK)
-					{
-						othernode->left->color = BLACK;
-						othernode->color = RED;
-						rightRotate(root, othernode);
-						othernode = parent->right;
-					}
-					othernode->color = parent->color;
-					parent->color = BLACK;
-					othernode->right->color = BLACK;
-					leftRotate(root, parent);
-					node = root;
-					break;
-				}
-			}
-			else
-			{
-				othernode = parent->left;
-				if (othernode->color == RED)
-				{
-					othernode->color = BLACK;
-					parent->color = RED;
-					rightRotate(root, parent);
-					othernode = parent->left;
-				}
-				if ((!othernode->left || othernode->left->color == BLACK) && (!othernode->right || othernode->right->color == BLACK))
-				{
-					othernode->color = RED;
-					node = parent;
-					parent = node->parent;
-				}
-				else
-				{
-					if (!(othernode->left) || othernode->left->color == BLACK)
-					{
-						othernode->right->color = BLACK;
-						othernode->color = RED;
-						leftRotate(root, othernode);
-						othernode = parent->left;
-					}
-					othernode->color = parent->color;
-					parent->color = BLACK;
-					othernode->left->color = BLACK;
-					rightRotate(root, parent);
-					node = root;
-					break;
-				}
-			}
-		}
-		if (node)
-			node->color = BLACK;
-	}
-
-	Node* search(Node* node, _Key key) const{
-		if (node == NULL || node->data.first == key)
-			return node;//он либо вернет нуль-листье, либо найденный
-		else
-			if (key > node->data.first)
-				return search(node->right, key);
-			else
-				return search(node->left, key);
-	}
 
 	void print_values(Node* node) const {
 		cout << "His keys: ";
 		typename LinkedList<_Value>::iterator it = node->data.second.begin();
-		while ( it != node->data.second.end()) {
+		while (it != node->data.second.end()) {
 			cout << *it << "\t";
 			it++;
 		}
 		cout << endl << endl;
-	
-	}
 
+	}
 	void print(Node* node)const {  //напечатать уже с какого-то узла
 		if (node == NULL)
 			return;
-		if (node->parent == NULL){
+		if (node->parent == NULL) {
 			cout << node->data.first << "(" << node->color << ") is root" << endl;
 			print_values(node);
 		}
@@ -438,166 +431,47 @@ protected://функции закрытые от людей, вспомогательные для интерфейсных
 		print(node->left);
 		print(node->right);
 	}
-
-	void preOrder(Node* tree)const{
-		if (tree != NULL) {
-			cout << tree->data.first << " ";
-			preOrder(tree->left);
-			preOrder(tree->right);
-		}
-	}
-	void inOrder(Node* tree)const{
-		if (tree != NULL) {
-			inOrder(tree->left);
-			cout << tree->data.first<< " ";
-			inOrder(tree->right);
-		}
-	}
-	void postOrder(Node* tree)const{
-		if (tree != NULL) {
-			postOrder(tree->left);
-			postOrder(tree->right);
-			cout << tree->data.first << " ";
-		}
-	}
-
-
-	bool Equals(const Node* cur, const Node* other) const {
-		if (cur == other && cur == nullptr) return true;
-		if (cur->data.first != other->data.first) return false;
-		if (cur->color != other->color) return false;
-		return Equals(cur->left, other->left) && Equals(cur->right, other->right);
-	}
-
-
-	void make_tree(Node* cur, const Node* other) {
-		if (other == nullptr) return;
-		if (other->left != nullptr) {
-			cur->left = new Node(*other->left);
-			cur->left->parent = cur;
-		}
-		if (other->right != nullptr) {
-			cur->right = new Node(*other->right);
-			cur->right->parent = cur;
-		}
-		make_tree(cur->left, other->left);
-		make_tree(cur->right, other->right);
-	
+	Node* search(Node* node, _Key key) const {
+		if (node == NULL || node->data.first == key)
+			return node;//он либо вернет нуль-листье, либо найденный
+		else
+			if (key > node->data.first)
+				return search(node->right, key);
+			else
+				return search(node->left, key);
 	}
 
 
 public://функции открытые для людей - интерфейс
-	RBTree() {		//Конструктор
+	//конструкторы и деструкторы
+	RBTree(){	
 		root = nullptr;
 		_size = 0;
 	}
-	RBTree(const RBTree<_Key, _Value>& other) {		//Конструктор создавающий объект при получении другого объекта
+	RBTree(const RBTree<_Key, _Value>& other)  {
+		if (other.root == nullptr) return;
 		root = new Node(*other.root);
 		_size = other._size;
 		make_tree(root, other.root);
 	}
-	~RBTree() {		// Деструктор
-		destroy(root);
+	RBTree(RBTree<_Key, _Value>&& other) {
+		root = other.root;
+		_size = other._size;
+		other.root = nullptr;
 	}
-
-	//вставка и удаления
-	void insert(const _Key key, const _Value value) {   // Вставляем узел, ключ это значение ключа, внешний интерфейс
-		Node* z = new Node(key, value, RED, NULL, NULL, NULL);
-		insert(root, z);
-		_size++;
-
-	};
-	void remove(_Key key){		// Удалить ключевой узел
-		Node* deletenode = search(root, key);
-		if (deletenode != NULL) {
-			remove(root, deletenode);
-			_size--;
-		}
-	}
-
-	void remove(_Key key, _Value value){
-		Node* deletenode = search(root, key);
-		if (deletenode != NULL) {
-			if (IsMulti && deletenode->data.second.GetLength() > 1) {
-				typename LinkedList<_Value>::iterator it = deletenode->data.second.find(deletenode->data.second.begin(), deletenode->data.second.end(), value);//нашел итератор на нужный
-				if (it == deletenode->data.second.end()) throw SetException(NoSuchElement);//если нет, то ошибочку
-				deletenode->data.second.del_item(it);//а в целом удаляй
-				//удалить значение и все
-				_size--;
-				return;
-			}
-			else if (deletenode->data.second[0] == value) remove(key);//если всего один элемент в ключе и он равен значению
-			else return;//то есть если тут он не нашел такого ключа-значение
-		}
-	}
-
-	//поиск
-	Node* search(_Key key){
-		return search(root, key);
-	}
-
-	//для печати(КЛП)
-	void print() {		// напечатать дерево
-		if (root == NULL)
-			cout << "empty RBtree";
-		else
-			print(root);
-	}
-
-	//они нужны для обхода
-	void preOrder(){			// Корень-Левый-Правый обход
-		if (root == NULL)
-			cout << "empty RBtree";
-		else
-			preOrder(root);
-	};
-	void inOrder(){   // Левый-Корень-Правый обход
-		if (root == NULL)
-			cout << "empty RBtree";
-		else
-			inOrder(root);
-	};
-	void postOrder(){   // Левый-Правый-Корень обход
-		if (root == NULL)
-			cout << "empty RBtree";
-		else
-			postOrder(root);
-	};
-
-	void print_values(_Key key) {
-		Node* node = search(root, key);
-		if (node) {
-			cout << "Key: " << key << endl;
-			print_values(node);
-		}
-	}
-
-	//сравнения деревьев:
-	bool Equals(const RBTree<_Key, _Value>& other) const {
-		return Equals(this->root, other.root);
-	}
-
-	bool operator == (const RBTree<_Key, _Value>& other) const {
-		return this->Equals(other);
-	}
-	bool operator!=(const RBTree<_Key, _Value>& other) const {
-		return !this->Equals(other);
-	}
-	
-	//верни кол-во элементов ключ-значение
-	size_t amount() {
-		return _size;
+	~RBTree() {
+		clear(root);
 	}
 
 
+	//добыть список по ключу
 	LinkedList<_Value>& get(const _Key& key) {
 		Node* cur = root;
 		while (cur != nullptr) {
-
-			if (cur->data.first < key) {
+			if (comparator(cur->data.first, key) < 0) {
 				cur = cur->right;
 			}
-			else if (cur->data.first > key) {
+			else if (comparator(cur->data.first, key) > 0) {
 				cur = cur->left;
 			}
 			else {
@@ -609,37 +483,163 @@ public://функции открытые для людей - интерфейс
 
 
 
-	void erase(Node* cur ) {
-		if (cur != nullptr) {
-			erase(cur->left);
-			erase(cur->right);
-			delete cur;
+
+	//посмотреть сайз!!! -  это кол-во элементов все-таки а не ключей
+
+	void insert(const _Key& key, const _Value& value) {
+		if (this->root == nullptr) {
+			this->root = new Node(key, value, BLACK);
+			_size++;
+			return;
+		}
+		Node* cur = this->root;
+		Node* parent = cur;
+		while (cur != nullptr) {
+			if (comparator(cur->data.first, key) > 0) {
+				parent = cur;
+				cur = cur->left;
+			}
+			else if (comparator(cur->data.first, key) < 0) {
+				parent = cur;
+				cur = cur->right;
+			}
+			else {
+				if (IsMulti) {
+					cur->data.second.Append(value);
+					_size++;
+				}
+				else cur->data.second[0] = value;
+				return;
+			}
+		}
+		_size++;
+		if (comparator(parent->data.first, key) < 0) {
+			parent->right = new Node(key, value, RED);
+			parent->right->parent = parent;
+			fixNode(parent->right);
+		}
+		else {
+			parent->left = new Node(key, value, RED);
+			parent->left->parent = parent;
+			fixNode(parent->left);
+		}
+	}
+	void remove(const _Key& key) {
+		Node* cur = root;
+		while (cur != nullptr) {
+			if (comparator(cur->data.first, key) > 0) {
+				cur = cur->left;
+			}
+			else if (comparator(cur->data.first, key) < 0) {
+				cur = cur->right;
+			}
+			else {
+				_size--;
+				delete_Node(cur);
+				return;
+			}
+		}
+		throw SetException(NoSuchElement);
+	}
+	void remove(const _Key& key, const _Value& val) {
+		Node* cur = root;
+		while (cur != nullptr) {
+			if (comparator(cur->data.first, key) > 0) {
+				cur = cur->left;
+			}
+			else if (comparator(cur->data.first, key) < 0) {
+				cur = cur->right;
+			}
+			else {
+				_size--;
+				//it-указатель на нужный val
+				typename LinkedList<_Value>::iterator it = cur->data.second.find(cur->data.second.begin(), cur->data.second.end(), val);
+				if (it == cur->data.second.end()) throw SetException(NoSuchElement);
+				cur->data.second.del_item(it);
+
+				if (cur->data.second.GetLength() == 0) {
+					delete_Node(cur);
+				}
+				return;
+			}
+		}
+		throw SetException(NoSuchElement);
+	}
+
+
+	/*удалить если не пригодится
+	RBTree<_Key, _Value, IsMulti, _cmp>& operator=(const RBTree<_Key, _Value, IsMulti, _cmp>& other) {
+		if (other.root == nullptr) return *this;
+		root = new Node(*other.root);
+		_size = other._size;
+		make_tree(root, other.root);
+		return *this;
+	}
+
+	RBTree<_Key, _Value, IsMulti, _cmp>& operator=(RBTree<_Key, _Value, IsMulti, _cmp>&& other) {
+		root = other.root;
+		_size = other._size;
+		other.root = nullptr;
+		return *this;
+	}
+	*/
+
+
+	//поиск
+	bool find(const _Key& key) const noexcept {
+		Node* cur = root;
+		while (cur != nullptr) {
+			if (comparator(key, cur->data.first) < 0) {
+				cur = cur->left;
+			}
+			else if (comparator(key, cur->data.first) > 0) {
+				cur = cur->right;
+			}
+			else {
+				return true;
+			}
+		}
+		return false;
+	}
+	Node* search(_Key key) {
+		return search(root, key);
+	}
+
+	//функции сравнения
+	bool Equals(const RBTree<_Key, _Value, IsMulti, _cmp>& other) const noexcept {
+		return Equals(this->root, other.root);
+	}
+	bool operator==(const RBTree<_Key, _Value, IsMulti, _cmp>& other) const noexcept {
+		return this->Equals(other);
+	}
+	bool operator!=(const RBTree<_Key, _Value, IsMulti, _cmp>& other) const noexcept {
+		return !this->Equals(other);
+	}
+	
+	//доп хуйня
+	size_t amount() {
+		return _size;
+	}
+	void erase() {
+		_size = 0;
+		clear(root);
+		root = nullptr;
+	}
+	void print() {		// напечатать дерево
+		if (root == NULL)
+			cout << "empty RBtree";
+		else
+			print(root);
+	}
+	void print_values(_Key key) {
+		Node* node = search(root, key);
+		if (node) {
+			cout << "Key: " << key << endl;
+			print_values(node);
 		}
 	}
 
-	void erase() {
-		Node* cur = root;
-		root = nullptr;
-		erase(cur);
-		_size = 0;
-	}
+
 
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -51,7 +51,15 @@ public:
 		RBTree<_Key, _Key, MultiSet, _cmp>::insert(key, key);
 	}
 	void remove(const _Key& key) {
-		RBTree<_Key, _Key, MultiSet, _cmp>::remove(key,key);
+		try {
+			RBTree<_Key, _Key, MultiSet, _cmp>::remove(key, key);
+
+		}
+		catch (SetException e) {
+			if (e.id != NoSuchElement) {
+				throw e;
+			}
+		}
 	}
 
 	int count(const _Key& key) {//возращает кол-во элементов со значением таким

@@ -24,9 +24,6 @@
     <ClInclude Include="LinkedList.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="RBtree.h">
-      <Filter>Исходные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="HashTable.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
@@ -42,6 +39,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source1.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="RBtree.h">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

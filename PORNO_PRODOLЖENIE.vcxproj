@@ -26,9 +26,9 @@
     <ClInclude Include="IDictionary.h" />
     <ClInclude Include="ISet.h" />
     <ClInclude Include="LinkedList.h" />
-    <ClInclude Include="RBtree.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="RBtree.h" />
     <ClCompile Include="Source1.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

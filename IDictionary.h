@@ -49,6 +49,20 @@ public:
 		return this->_size;
 	};//кол-во ключей в словаре возвращает
 
+	void remove(const _Key& key) {
+		try {
+			RBT::remove(key);
+		}
+		catch (SetException e) {
+			if (e.id != NoSuchElement) {
+				throw e;
+			}
+		}
+	}
+
+	void insert(const _Key& key,const _Value& value) {
+		RBT::insert(key, value);
+	}
 
 
 	_Value& operator[](const _Key& key) {//для возврата значения
