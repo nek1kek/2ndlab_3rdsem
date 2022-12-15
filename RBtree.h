@@ -402,13 +402,17 @@ protected://функции закрытые от людей, вспомогательные для интерфейсных
 
 
 	void print_values(Node* node) const {
-		cout << "His keys: ";
+		//cout << "His keys: ";
 		typename LinkedList<_Value>::iterator it = node->data.second.begin();
-		while (it != node->data.second.end()) {
-			cout << *it << "\t";
+		if (node->data.second.GetLength() > 0){
+			cout << *it;
 			it++;
 		}
-		cout << endl << endl;
+		//вывели первый, а дальше уже запятая и элемент и погнали 
+		while (it != node->data.second.end()) {
+			cout << ", " << *it;
+			it++;
+		}
 
 	}
 	void print(Node* node)const {  //напечатать уже с какого-то узла

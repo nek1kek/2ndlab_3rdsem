@@ -1,24 +1,25 @@
 #pragma once
 #include "RBTree.h"
 
-template<typename _Key, typename _Value, class _cmp = MyComparator<_Key>>
-class IDictionary : protected RBTree<_Key, _Value, false, _cmp> {
+template<typename _Key, typename _Value, bool ManyValuesDict = false, class _cmp = MyComparator<_Key>>
+class IDictionary : protected RBTree<_Key, _Value, ManyValuesDict, _cmp> {
 protected:
 	_Value& get(const _Key& key) {
 		return RBT::get(key)[0];
 	}
 public:
-	using RBT = RBTree<_Key, _Value, false, _cmp>;
+	using RBT = RBTree<_Key, _Value, ManyValuesDict, _cmp>;
 
 	IDictionary() : RBT() {};
-	IDictionary(const IDictionary<_Key, _Value, _cmp>& other) : RBT(other) {};
+	IDictionary(const IDictionary<_Key, _Value, ManyValuesDict, _cmp>& other) : RBT(other) {};
 	~IDictionary() = default;
 
 	void inOrder(RBT::Node* cur, bool& putpoint)const {//для принта
 		if (cur != NULL) {
 			inOrder(cur->left, putpoint);
 			if (putpoint) { cout << ", "; }
-			cout << cur->data.first << ":" << cur->data.second[0];
+			cout << cur->data.first << ": ";
+			RBT::print_values(cur);
 			putpoint = true;
 			inOrder(cur->right, putpoint);
 		}

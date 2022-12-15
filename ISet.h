@@ -88,7 +88,7 @@ public:
 		}
 	}
 	size_t amount() { return this->_size; };
-	_Key get_min() const {//не меняет объект
+	_Key& get_min() const {//не меняет объект
 		 typename RBT::Node* cur = RBT::root;
 		 if (cur == nullptr) {
 			 throw SetException(EmptySet);
@@ -99,7 +99,7 @@ public:
 		 //if (cur == nullptr) throw SetException(IncorrectRange);
 		 return cur->data.second[0];
 	}
-	_Key get_max() const {//не меняет объект
+	_Key& get_max() const {//не меняет объект
 		 typename RBT::Node* cur = RBT::root;//заюзал сокарщение using(в самом начале увидешь это)
 		 if (cur == nullptr) {
 			 throw SetException(EmptySet);
