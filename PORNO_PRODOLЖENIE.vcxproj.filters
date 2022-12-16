@@ -24,9 +24,6 @@
     <ClInclude Include="LinkedList.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="HashTable.h">
-      <Filter>Исходные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="Histogram.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
@@ -34,6 +31,9 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
     <ClInclude Include="IDictionary.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="alphabet_pointer.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>

@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alphabet_pointer.h" />
     <ClInclude Include="DynamicArray.h" />
     <ClInclude Include="exception.h" />
-    <ClInclude Include="HashTable.h" />
     <ClInclude Include="Histogram.h" />
     <ClInclude Include="IDictionary.h" />
     <ClInclude Include="ISet.h" />

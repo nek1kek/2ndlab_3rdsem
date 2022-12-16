@@ -30,6 +30,9 @@ public:
 		inOrder(RBT::root, putpoint);
 		cout << "}" << endl;
 	}
+	void print_values(_Key a ) {//выводить значения ключа
+		RBT::print_values(a);
+	}
 
 
 	int count(const _Key& key) {//возращает 1 при нахождении ключа, 0 при нет

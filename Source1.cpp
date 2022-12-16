@@ -3,6 +3,7 @@
 #include "LinkedList.h"
 #include "ISet.h"
 #include "IDictionary.h"
+#include "alphabet_pointer.h"
 #include<iostream>
 using namespace std;
 
@@ -31,27 +32,18 @@ void a() {
 
 }
 
+void z() {
+	setlocale(LC_ALL, "Russian");
 
+	AlpabetPointer<false> ap("Привет, 1 меняменменяменяменяменязовут Артём!", 2);
+	ap.remove("Привет");
+	ap.print();
+	ap.get_pages("меня");
+}
 
 int main() {
-	IDictionary<int, int> dict;
-	DynamicArray<int> A;
-	for (int i = 0; i < 250000; i++) {
-		A.Append(rand() % 10000);
-	}
-	for (int i = 0; i < 250000; i++) {
-		dict.insert(A[i], i);
-	}
-	for (int i = 0; i < 250000; i++) {
-		try {
-			dict.remove(A[i]);
-		}
-		catch (SetException e) {
-			if (e.id != NoSuchElement) {
-				throw e;
-			}
-		}
-	}
-	cout << dict.amount();
-	dict.print();
+	setlocale(LC_ALL, "Russian");
+	z();
+
+	//проверить бы счет элементов в рб дереве при мульти, но мне пока в падлу)))
 }
