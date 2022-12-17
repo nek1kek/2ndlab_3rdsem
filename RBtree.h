@@ -403,11 +403,11 @@ protected://функции закрытые от людей, вспомогательные для интерфейсных
 
 	void print_values(Node* node) const {
 		//cout << "His keys: ";
-		typename LinkedList<_Value>::iterator it = node->data.second.begin();
-		if (node->data.second.GetLength() > 0){
-			cout << *it;
-			it++;
+		if (node->data.second.GetLength() > 0) {
+			cout << node->data.second[0];
 		}
+
+		typename LinkedList<_Value>::iterator it = node->data.second.begin()+1;
 		//вывели первый, а дальше уже запятая и элемент и погнали 
 		while (it != node->data.second.end()) {
 			cout << ", " << *it;
@@ -571,7 +571,6 @@ public://функции открытые для людей - интерфейс
 	}
 
 
-	/*удалить если не пригодится
 	RBTree<_Key, _Value, IsMulti, _cmp>& operator=(const RBTree<_Key, _Value, IsMulti, _cmp>& other) {
 		if (other.root == nullptr) return *this;
 		root = new Node(*other.root);
@@ -586,7 +585,6 @@ public://функции открытые для людей - интерфейс
 		other.root = nullptr;
 		return *this;
 	}
-	*/
 
 
 	//поиск
