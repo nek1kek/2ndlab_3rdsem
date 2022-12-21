@@ -22,12 +22,15 @@
     <ClInclude Include="alphabet_pointer.h" />
     <ClInclude Include="DynamicArray.h" />
     <ClInclude Include="exception.h" />
-    <ClInclude Include="Histogram.h" />
     <ClInclude Include="IDictionary.h" />
     <ClInclude Include="ISet.h" />
     <ClInclude Include="LinkedList.h" />
+    <ClInclude Include="menu.h" />
+    <ClInclude Include="random.h" />
+    <ClInclude Include="Sparse_matrixx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="helping_foo.h" />
     <ClCompile Include="RBtree.h" />
     <ClCompile Include="Source1.cpp" />
   </ItemGroup>

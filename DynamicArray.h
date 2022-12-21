@@ -1,17 +1,17 @@
 #pragma once
 #include "exception.h"
+#include <iostream>
 
 template<typename T, bool IsConst>
 class RandomAccessIterator;
 
 template<typename T>
-class DynamicArray;//создали нулевой класс,чтобы не выдавало ошибки
-
+class DynamicArray;
 
 template<typename V>
-struct ArrayIterators;//и нулевую сструктурку
+struct ArrayIterators;
 
-template<typename T>//расстояние  между итератормами
+template<typename T>
 size_t distance(typename DynamicArray<T>::iterator begin, typename DynamicArray<T>::iterator end) {
 	size_t res = 0;
 	while (begin != end) {
@@ -27,19 +27,20 @@ class RandomAccessIterator {
 private:
 	size_t cur_pos = 0;
 	using type = std::conditional_t<IsConst, const T, T>;
-	DynamicArray<T>* arr = nullptr;
+	std::conditional_t<IsConst, const DynamicArray<T>*, DynamicArray<T>*> arr = nullptr;
 public:
-	RandomAccessIterator(size_t pos, DynamicArray<T>* arr) : arr(arr) {
+	RandomAccessIterator() = default;
+	RandomAccessIterator(size_t pos, std::conditional_t<IsConst, const DynamicArray<T>*, DynamicArray<T>*> arr) : arr(arr) {
 		cur_pos = pos;
 	}
 	RandomAccessIterator(const RandomAccessIterator<T, IsConst>& other) : arr(other.arr) {
 		cur_pos = other.cur_pos;
 	}
 	type& operator *() {
-		return arr->Get(cur_pos);
+		return (*arr)[cur_pos];
 	}
-	RandomAccessIterator<T, IsConst> operator ->() const {
-		return *this;
+	type& operator *() const {
+		return (*arr)[cur_pos];
 	}
 	RandomAccessIterator<T, IsConst>& operator++() {
 		cur_pos++;
@@ -96,6 +97,8 @@ private:
 	T* items = nullptr;//указатель на 1элемент
 	int size = 0;//сколько всего мест
 	size_t used_items = 0;//сколько уже заюзано места
+	void Rebuf(int);
+
 public:
 	//итератор
 	using iterator = RandomAccessIterator<T, false>;//переобозначали и дали другие имена
@@ -112,7 +115,7 @@ public:
 		iterator iter(used_items, this);
 		return iter;
 	}
-	const_iterator cend() {
+	const_iterator cend() const {
 		const_iterator iter(used_items, this);
 		return iter;
 	}
@@ -120,33 +123,59 @@ public:
 	DynamicArray();
 	DynamicArray(size_t, T);
 	DynamicArray(T*, int);
-	DynamicArray(DynamicArray<T>*);
-	DynamicArray(std::initializer_list<T>);
+	DynamicArray(const DynamicArray<T>&);
+	DynamicArray(DynamicArray<T>&&);
+	DynamicArray(const std::initializer_list<T>&);
 
 	//деконструктор
 	~DynamicArray();
 
 	//геттеры
 	T& Get(int);
-	int GetSize();
+	const T& c_get(int index);
+	int GetSize() const;
 
 	//операции
 	void Set(int, T);
-	void Resize(int);
 	void Append(T);
 	void Prepend(T);
 	void InsertAt(T, iterator);
+	void Resize(size_t);
 	DynamicArray<T>* GetSubArray(iterator, iterator);
 	DynamicArray<T>* Concat(DynamicArray<T>*);
 	void del_item(iterator);
 	iterator find(iterator, iterator, T);
+	DynamicArray<T>* SplitArray(bool(T));
 	bool Equals(DynamicArray<T>*);
 	bool IsSubArr(DynamicArray<T>*);
 
 	//операторы
 	T& operator[] (int index);
+	const T& operator[] (int index) const;
 	bool operator==(DynamicArray<T>& seq);
 	bool operator!=(DynamicArray<T>& seq);
+
+	DynamicArray<T>& operator=(const DynamicArray<T>& other) {
+		if (this != &other) {
+			this->items = reinterpret_cast<T*>(new char[(other.size) * sizeof(T)]);
+			size = other.size;
+			used_items = other.used_items;
+			memcpy(this->items, other.items, size * sizeof(T));
+		}
+		return *this;
+	}
+
+	DynamicArray<T>& operator=(DynamicArray<T>&& other) {
+		if (this != &other) {
+			this->items = other.items;
+			this->size = other.size;
+			this->used_items = other.used_items;
+			other.items = nullptr;
+			other.size = 0;
+			other.used_items = 0;
+		}
+		return *this;
+	}
 };
 
 
@@ -159,8 +188,7 @@ DynamicArray<T>::DynamicArray() {
 template <class T>
 DynamicArray<T>::DynamicArray(size_t count, T fill) {
 	if (count < 0) throw SetException(SizeBelowZero);
-	items = new T[(count + 1) * 2];//формат обычного массива, количесвто чисел + в два раза больше на всякий случай
-	size = count * 2;
+	Rebuf(count);
 	used_items = count;
 	for (int i = 0; i < count; i++) {
 		items[i] = fill;
@@ -169,25 +197,32 @@ DynamicArray<T>::DynamicArray(size_t count, T fill) {
 template <class T>
 DynamicArray<T>::DynamicArray(T* items, int count) {
 	if (count < 0) throw SetException(SizeBelowZero);
-	this->items = new T[(count + 1) * 2];
-	size = count * 2;
+	Rebuf(count);
 	used_items = count;
 	for (int i = 0; i < count; i++) {
 		this->items[i] = items[i];
 	}
 }
+
 template <class T>
-DynamicArray<T>::DynamicArray(DynamicArray<T>* dynamic_array) {
-	items = new T[dynamic_array->size];
-	size = dynamic_array->size;
-	used_items = dynamic_array->used_items;
-	for (int i = 0; i < size; i++) {
-		items[i] = dynamic_array->items[i];
-	}
+DynamicArray<T>::DynamicArray(const DynamicArray<T>& dynamic_array) {
+	Rebuf(dynamic_array.size);
+	used_items = dynamic_array.used_items;
+	memcpy(this->items, dynamic_array.items, size * sizeof(T));
+}
+
+template <class T>
+DynamicArray<T>::DynamicArray(DynamicArray<T>&& other) {
+	items = other.items;
+	size = other.size;
+	used_items = other.used_items;
+	other.items = nullptr;
+	other.size = 0;
+	other.used_items = 0;
 }
 
 template<class T>
-DynamicArray<T>::DynamicArray(std::initializer_list<T> list) : DynamicArray(list.size(), T()) {
+DynamicArray<T>::DynamicArray(const std::initializer_list<T>& list) : DynamicArray(list.size(), T()) {
 	int j = 0;
 	for (auto i : list) {
 		this->items[j] = i;
@@ -195,8 +230,7 @@ DynamicArray<T>::DynamicArray(std::initializer_list<T> list) : DynamicArray(list
 	}
 }
 
-
-//деструктор
+//деконструктор
 template <class T>
 DynamicArray<T>::~DynamicArray() {
 	delete[] this->items;
@@ -212,19 +246,28 @@ T& DynamicArray<T>::Get(int index) {
 	return items[index];
 }
 
+template <class T>
+const T& DynamicArray<T>::c_get(int index) {
+	if (index >= used_items || index < 0) {
+		throw SetException(IndexOutOfRange);
+	}
+	return items[index];
+}
 
 //операции
 
 
 template <class T>
-void DynamicArray<T>::Resize(int NewSize) {
+void DynamicArray<T>::Rebuf(int NewSize) {
 	if (NewSize < 0) {
 		throw SetException(SizeBelowZero);
 	}
 	try {
 		T* items_cur = new T[NewSize];
-		int cpy_num = (NewSize > size ? size : NewSize);//чтобы скопировать 
-		memcpy(items_cur, items, cpy_num * sizeof(T));//cpy_num = copy_num
+		size_t cpy_num = NewSize > size ? size : NewSize;
+		for (size_t i = 0; i < cpy_num; i++) {
+			items_cur[i] = items[i];
+		}
 		delete[] items;
 		items = items_cur;
 		size = NewSize;
@@ -234,10 +277,16 @@ void DynamicArray<T>::Resize(int NewSize) {
 	}
 }
 
+template<class T>
+void DynamicArray<T>::Resize(size_t newSize) {
+	if (size < newSize) Rebuf(newSize);
+	used_items = newSize;
+}
+
 template <class T>
 void DynamicArray<T>::Append(T item) {
 	if (used_items >= size) {
-		this->Resize((size + 1) * 2);
+		this->Rebuf((size + 1) * 2);
 	}
 	used_items++;
 	this->Set(used_items - 1, item);
@@ -247,7 +296,7 @@ void DynamicArray<T>::Append(T item) {
 template <class T>
 void DynamicArray<T>::Prepend(T item) {
 	if (used_items >= size) {
-		this->Resize((size + 1) * 2);
+		this->Rebuf((size + 1) * 2);
 	}
 	memmove(this->items + 1, this->items, (used_items) * sizeof(T));
 	this->Set(0, item);
@@ -260,7 +309,7 @@ void DynamicArray<T>::InsertAt(T item, iterator it) {
 		throw SetException(IndexOutOfRange);
 	}
 	if (used_items >= size) {
-		this->Resize((size + 1) * 2);
+		this->Rebuf((size + 1) * 2);
 	}
 
 	memmove(this->items + distance<T>(begin(), it) + 1, this->items + distance<T>(begin(), it), (used_items - distance<T>(begin(), it)) * sizeof(T));
@@ -298,10 +347,10 @@ void DynamicArray<T>::del_item(iterator it) {
 	if (it == end()) {
 		throw SetException(IndexOutOfRange);
 	}
-	memmove(items + distance<T>(begin(), it), items + distance<T>(begin(), it) + 1, (used_items - 1 - distance<T>(begin(), it)) * sizeof(T));//указатель куда, указатель откуда, и сколько
+	memmove(items + distance<T>(begin(), it), items + distance<T>(begin(), it) + 1, (used_items - 1 - distance<T>(begin(), it)) * sizeof(T));
 	used_items--;
 	if (used_items <= (size / 2)) {
-		this->Resize(this->size / 2);
+		this->Rebuf(this->size / 2);
 	}
 }
 
@@ -326,7 +375,18 @@ void DynamicArray<T>::Set(int index, T value) {
 	items[index] = value;
 }
 
-
+template <class T>
+DynamicArray<T>* DynamicArray<T>::SplitArray(bool cmp(T)) {
+	DynamicArray<T>* res = new DynamicArray<T>;
+	for (int i = 0; i < this->used_items; i++) {
+		if (cmp(this->Get(i))) {
+			res->Append(this->Get(i));
+			this->del_item(this->begin() + i);
+			i--;
+		}
+	}
+	return res;
+}
 
 template <class T>
 bool DynamicArray<T>::Equals(DynamicArray<T>* seq) {
@@ -353,6 +413,11 @@ T& DynamicArray<T>:: operator[] (int index) {
 }
 
 template <class T>
+const T& DynamicArray<T>:: operator[] (int index) const {
+	return items[index];
+}
+
+template <class T>
 bool DynamicArray<T>:: operator==(DynamicArray<T>& seq) {
 	return this->Equals(&seq);
 }
@@ -363,7 +428,7 @@ bool DynamicArray<T>::operator!=(DynamicArray<T>& seq) {
 }
 
 template<class T>
-int DynamicArray<T>::GetSize() {
+int DynamicArray<T>::GetSize() const {
 	return used_items;
 }
 

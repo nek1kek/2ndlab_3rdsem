@@ -8,7 +8,7 @@ using namespace std;
 
 
 template<bool IsWords = true>
-class AlpabetPointer : protected IDictionary<string,size_t,true>
+class AlpabetPointer : public IDictionary<string,size_t,true>
 {
 private:
 	IDictionary<string,size_t,true> dict;//{слово: числа,где встречается}
@@ -78,8 +78,14 @@ public:
 	}
 
 
-	void get_pages(const string& word) noexcept {
+	void print_pages(const string& word) noexcept {
 		dict.print_values(word);
+	}
+	LinkedList<size_t> get_pages(const string& word) noexcept {
+		LinkedList<size_t> ans;
+		if (dict.find(word))
+			ans = dict.get_list(word);
+		return ans;
 	}
 	void print()  {
 		dict.print();

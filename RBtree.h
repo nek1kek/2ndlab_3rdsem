@@ -461,7 +461,6 @@ public://функции открытые для людей - интерфейс
 	RBTree(RBTree<_Key, _Value>&& other) {
 		root = other.root;
 		_size = other._size;
-		other.root = nullptr;
 	}
 	~RBTree() {
 		clear(root);
@@ -582,7 +581,6 @@ public://функции открытые для людей - интерфейс
 	RBTree<_Key, _Value, IsMulti, _cmp>& operator=(RBTree<_Key, _Value, IsMulti, _cmp>&& other) {
 		root = other.root;
 		_size = other._size;
-		other.root = nullptr;
 		return *this;
 	}
 

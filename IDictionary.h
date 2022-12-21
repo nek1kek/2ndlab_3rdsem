@@ -1,13 +1,17 @@
 #pragma once
 #include "RBTree.h"
+#include "LinkedList.h"
 
 template<typename _Key, typename _Value, bool ManyValuesDict = false, class _cmp = MyComparator<_Key>>
-class IDictionary : protected RBTree<_Key, _Value, ManyValuesDict, _cmp> {
-protected:
+class IDictionary : public RBTree<_Key, _Value, ManyValuesDict, _cmp> {
+public:
 	_Value& get(const _Key& key) {
 		return RBT::get(key)[0];
 	}
-public:
+
+	LinkedList<_Value>& get_list(const _Key& key) {
+		return RBT::get(key);
+	}
 	using RBT = RBTree<_Key, _Value, ManyValuesDict, _cmp>;
 
 	IDictionary() : RBT() {};
@@ -18,7 +22,7 @@ public:
 		if (cur != NULL) {
 			inOrder(cur->left, putpoint);
 			if (putpoint) { cout << ", "; }
-			cout << cur->data.first << ": ";
+			cout <<endl << cur->data.first << ": ";
 			RBT::print_values(cur);
 			putpoint = true;
 			inOrder(cur->right, putpoint);
@@ -28,7 +32,7 @@ public:
 		cout << "IDictionary: {";
 		bool putpoint = false;
 		inOrder(RBT::root, putpoint);
-		cout << "}" << endl;
+		cout << "\n}" << endl;
 	}
 	void print_values(_Key a ) {//выводить значения ключа
 		RBT::print_values(a);

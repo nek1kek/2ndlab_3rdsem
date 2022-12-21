@@ -24,9 +24,6 @@
     <ClInclude Include="LinkedList.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
-    <ClInclude Include="Histogram.h">
-      <Filter>Исходные файлы</Filter>
-    </ClInclude>
     <ClInclude Include="ISet.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
@@ -36,12 +33,24 @@
     <ClInclude Include="alphabet_pointer.h">
       <Filter>Исходные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="Sparse_matrixx.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="menu.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="random.h">
+      <Filter>Исходные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source1.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="RBtree.h">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="helping_foo.h">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
