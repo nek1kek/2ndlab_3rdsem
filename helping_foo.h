@@ -145,12 +145,7 @@ namespace Traits {
 			return to_string(x);
 		}
 	};
-	//std::string _remake_string(std::string x, size_t n) {
-	//	while (x.size() < n) {
-	//		x += ' ';
-	//	}
-	//	return x;
-	//}
+
 }
 
 using namespace Traits;
@@ -189,11 +184,4 @@ DynamicArray<Argument<T>>* _MakeArgumentList(string s, bool canBeExclusive) {
 	}
 	return res;
 }
-//
-//std::string GetCommand1(string s) {
-//	std::string res;
-//	for (int i = 0; i < s.size() && i < s.find(' '); i++) {
-//		res += s[i];
-//	}
-//	return res;
-//}
+

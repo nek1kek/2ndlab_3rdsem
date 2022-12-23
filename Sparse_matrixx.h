@@ -144,16 +144,7 @@ public:
 		return *this;
 	}
 
-	/*delete maybe
-	sparse_matrix<T>& operator=(sparse_matrix<T>&& other) {
-		this->matrix = other.matrix;
-		this->hor = other.hor;
-		this->ver = other.ver;
-		other.hor = 0;
-		other.ver = 0;
-		return *this;
-	}
-	*/
+
 
 	//сравнения
 	bool operator==(sparse_matrix<T>& other) {

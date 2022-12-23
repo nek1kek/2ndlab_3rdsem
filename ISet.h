@@ -96,7 +96,6 @@ public:
 		 while (cur->left != nullptr) {
 			 cur = cur->left;
 		 }
-		 //if (cur == nullptr) throw SetException(IncorrectRange);
 		 return cur->data.second[0];
 	}
 	_Key& get_max() const {//не меняет объект
@@ -107,11 +106,9 @@ public:
 		 while (cur->right != nullptr) {
 			 cur = cur->right;
 		 }
-		 //if (cur == nullptr) throw SetException(IncorrectRange);
 		 return cur->data.second[0];
 	 }
 
-	 //оператор присваивания как конструктор копирования
 	 
 
 };

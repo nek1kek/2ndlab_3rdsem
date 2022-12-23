@@ -396,7 +396,7 @@ protected://функции закрытые от людей, вспомогательные для интерфейсных
 		else {
 			rotateRight(p->parent);
 		}
-		fixdelete(p);//go to 2б in notes
+		fixdelete(p);//go to 2 б in notes
 		return;
 	}
 
